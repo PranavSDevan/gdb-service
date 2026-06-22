@@ -1,0 +1,20 @@
+server:
+  port: 8002
+
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+
+logging:
+  level:
+    root: INFO
+
+transfer:
+  limits:
+    dailyMaxLimit: 100000.00
+
+external:
+  account-service:
+    url: ${ACCOUNT_SERVICE_URL}

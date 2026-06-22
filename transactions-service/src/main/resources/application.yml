@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: transactions-service
+  profiles:
+    active: dev # Switch this to 'prod' to test production rules
+
+springdoc:
+  api-docs:
+    path: /api/v1/api-docs
+  swagger-ui:
+    path: /api/v1/docs
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger - %msg%n"
+
+---
+# -------------------------------------------------------------------
+# DEV PROFILE CONFIGURATION
+# -------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+banking:
+  limits:
+    daily-max-limit: 10000.00 # Aligned configuration key for dev
+
+---
+# -------------------------------------------------------------------
+# PROD PROFILE CONFIGURATION
+# -------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+banking:
+  limits:
+    daily-max-limit: 50000.00 # Higher limit configuration key for prod
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
