@@ -14,7 +14,7 @@ public class AuditRepositoryImpl implements AuditRepository {
 
     @Override
     public void save(UserAuditLog auditLog) {
-        String sql = "INSERT INTO user_audit_log (user_id, action, old_data, new_data) VALUES (?, ?::audit_action_enum, ?::jsonb, ?::jsonb)";
+        String sql = "INSERT INTO user_audit_log (user_id, action, old_data, new_data) VALUES (?, ?, ?::jsonb, ?::jsonb)";
 
         jdbcTemplate.update(sql,
                 auditLog.getUserId(),
