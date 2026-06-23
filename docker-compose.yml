@@ -1,0 +1,286 @@
+version: '3.8'
+
+networks:
+  gdb-network:
+    driver: bridge
+
+volumes:
+  auth-db-data:
+  users-db-data:
+  accounts-db-data:
+  transactions-db-data:
+
+services:
+
+  # ─── Databases ───────────────────────────────────────────
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: gdb_auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  users-db:
+    image: postgres:15-alpine
+    container_name: users-db
+    environment:
+      POSTGRES_DB: gdb_users_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  accounts-db:
+    image: postgres:15-alpine
+    container_name: accounts-db
+    environment:
+      POSTGRES_DB: gdb_accounts_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  transactions-db:
+    image: postgres:15-alpine
+    container_name: transactions-db
+    environment:
+      POSTGRES_DB: gdb_transactions_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - transactions-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Eureka Server ───────────────────────────────────────
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    image: gdb/eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─── Business Services ───────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    image: gdb/auth-service:latest
+    container_name: auth-service
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: jdbc:postgresql://auth-db:5432/gdb_auth_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  users-service:
+    build:
+      context: .
+      dockerfile: users-service/Dockerfile
+    image: gdb/users-service:latest
+    container_name: users-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: jdbc:postgresql://users-db:5432/gdb_users_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8004
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      users-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  account-service:
+    build:
+      context: .
+      dockerfile: account-service/Dockerfile
+    image: gdb/account-service:latest
+    container_name: account-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8004
+      AADHAR_SERVICE_URL: http://aadhar-service:8005
+      COMPANY_SERVICE_URL: http://company-service:8006
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  transactions-service:
+    build:
+      context: .
+      dockerfile: transactions-service/Dockerfile
+    image: gdb/transactions-service:latest
+    container_name: transactions-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: jdbc:postgresql://transactions-db:5432/gdb_transactions_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8004
+      ACCOUNT_SERVICE_URL: http://account-service:8001
+      PAYMENT_GATEWAY_SERVICE_URL: http://payment-gateway-service:8008
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      transactions-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  payment-gateway-service:
+    build:
+      context: .
+      dockerfile: payment-gateway-service/Dockerfile
+    image: gdb/payment-gateway-service:latest
+    container_name: payment-gateway-service
+    ports:
+      - "8008:8008"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8004
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  aadhar-service:
+    build:
+      context: .
+      dockerfile: aadhar-service/Dockerfile
+    image: gdb/aadhar-service:latest
+    container_name: aadhar-service
+    ports:
+      - "8005:8005"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  company-service:
+    build:
+      context: .
+      dockerfile: company-service/Dockerfile
+    image: gdb/company-service:latest
+    container_name: company-service
+    ports:
+      - "8006:8006"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  # ─── API Gateway ─────────────────────────────────────────
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    image: gdb/gateway-service:latest
+    container_name: gateway-service
+    ports:
+      - "8000:8000"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      AUTH_SERVICE_URL: http://auth-service:8004
+      ACCOUNT_SERVICE_URL: http://account-service:8001
+      TRANSACTIONS_SERVICE_URL: http://transactions-service:8002
+      USERS_SERVICE_URL: http://users-service:8003
+      AADHAR_SERVICE_URL: http://aadhar-service:8005
+      COMPANY_SERVICE_URL: http://company-service:8006
+      PAYMENT_SERVICE_URL: http://payment-gateway-service:8008
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - gdb-network
+
+  # ─── Frontend ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: gdb/frontend:latest
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway-service
+    networks:
+      - gdb-network
+
