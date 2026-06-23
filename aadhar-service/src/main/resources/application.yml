@@ -28,3 +28,11 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
   packages-to-scan: com.gdb.aadhar.controller
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true

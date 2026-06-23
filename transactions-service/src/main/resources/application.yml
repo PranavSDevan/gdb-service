@@ -14,6 +14,19 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger - %msg%n"
 
+# Internal service client URLs (used by AuthClient.java @Value)
+app:
+  services:
+    auth-url: ${AUTH_SERVICE_URL:http://localhost:8004}
+
+# Eureka Client Configuration (shared across all profiles)
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
 ---
 # -------------------------------------------------------------------
 # DEV PROFILE CONFIGURATION
@@ -39,9 +52,3 @@ spring:
 banking:
   limits:
     daily-max-limit: 50000.00 # Higher limit configuration key for prod
-
-# Eureka Client Configuration
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/

@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/gdb_transactions_db
-    username: postgres
-    password: postgres
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/gdb_transactions_db}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   flyway:
@@ -22,13 +22,7 @@ transfer:
 
 external:
   account-service:
-    url: http://localhost:8001
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8001}
   # FIX: Added missing payment-gateway mapping to resolve the initialization crash
   payment-gateway-service:
     url: ${PAYMENT_GATEWAY_SERVICE_URL:http://localhost:8008}
-
-# FIX: Added Eureka Discovery routing configuration so it registers cleanly with your dashboard
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
