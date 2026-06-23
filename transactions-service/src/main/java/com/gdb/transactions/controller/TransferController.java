@@ -38,7 +38,7 @@ public class TransferController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<FundTransferResponse> processTransfer(@Valid @RequestBody FundTransferRequest request) {
-        SecurityUtils.checkStaffRole();
+        SecurityUtils.checkAnyStaffRole();
         log.info("Received transfer request from account: {} to account: {}",
                 request.getFromAccount(), request.getToAccount());
 

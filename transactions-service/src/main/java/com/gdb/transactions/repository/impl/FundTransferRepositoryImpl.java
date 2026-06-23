@@ -50,7 +50,17 @@ public class FundTransferRepositoryImpl implements FundTransferRepository {
 
         namedParameterJdbcTemplate.update(sql, params, keyHolder);
 
-        Long id = keyHolder.getKey().longValue();
+        // FIX: Safely extract the explicit primary column key to handle PostgreSQL default fields safely
+        Long id = null;
+        if (keyHolder.getKeys() != null && keyHolder.getKeys().containsKey("id")) {
+            Number key = (Number) keyHolder.getKeys().get("id");
+            id = key.longValue();
+        } else if (keyHolder.getKey() != null) {
+            id = keyHolder.getKey().longValue();
+        } else {
+            throw new RuntimeException("Failed to extract auto-incremented ID from KeyHolder");
+        }
+
         return findById(id)
                 .orElseThrow(() -> new RuntimeException("Failed to retrieve saved fund transfer"));
     }

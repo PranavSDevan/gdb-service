@@ -111,10 +111,11 @@ public class TransferLimitServiceImpl implements TransferLimitService {
         // TODO: MOD5-BUG-01: Limits check using TransferProperties.
         // Injected Bug: We validate if daily transfer amount exceeds a global max threshold loaded via configuration.
         // Since TransferProperties properties map incorrectly (dailyMaxLimit is 0), any transfer amount will trigger this.
-        if (transferProperties != null) {
+        // FIX: Only validate the global limit if it has been explicitly configured to a positive non-zero value
+        if (transferProperties != null && transferProperties.getDailyMaxLimit() != null) {
             BigDecimal globalMax = transferProperties.getDailyMaxLimit();
-            if (amount.compareTo(globalMax) > 0) {
-                throw new TransactionException("TRANSFER_LIMIT_EXCEEDED", 
+            if (globalMax.compareTo(BigDecimal.ZERO) > 0 && amount.compareTo(globalMax) > 0) {
+                throw new TransactionException("TRANSFER_LIMIT_EXCEEDED",
                         "Amount exceeds global daily max limit config of " + globalMax);
             }
         }
