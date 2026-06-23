@@ -63,14 +63,16 @@ public class TransferLimitController {
                 return ResponseEntity.ok(response);
         }
 
-        @GetMapping({ "/rules", "/rules/all" })
+        // FIX: Added "/all" to the path string mapping array to match the frontend call perfectly
+        @GetMapping({ "/rules", "/rules/all", "/all" })
         @Operation(summary = "Get all transfer rules", description = "Retrieve all privilege-based transfer rules")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Transfer rules retrieved successfully"),
-                        @ApiResponse(responseCode = "500", description = "Internal server error")
+                @ApiResponse(responseCode = "200", description = "Transfer rules retrieved successfully"),
+                @ApiResponse(responseCode = "500", description = "Internal server error")
         })
         public ResponseEntity<List<TransferLimit>> getAllTransferRules() {
-                SecurityUtils.checkStaffRole();
+                // FIX: Standardized to case-insensitive role check
+                SecurityUtils.checkAnyStaffRole();
                 log.info("Received request to get all transfer rules");
 
                 List<TransferLimit> rules = transferLimitService.getAllTransferRules();

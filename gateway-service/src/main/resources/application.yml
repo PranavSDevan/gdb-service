@@ -48,4 +48,5 @@ spring:
         - id: transactions-service-route
           uri: http://localhost:8002
           predicates:
-            - Path=/api/v1/transactions/**, /api/v1/transaction/**, /api/v1/transaction-logs/**
+            # FIX: Added transfer-limits path pattern to map routes properly to port 8002
+            - Path=/api/v1/transactions/**, /api/v1/transaction/**, /api/v1/transaction-logs/**, /api/v1/transfer-limits/**

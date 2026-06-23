@@ -21,12 +21,13 @@ public class CompanyClient {
     private final String companyServiceUrl;
 
     public CompanyClient(RestTemplate restTemplate,
-            @Value("${external.company-service.url}") String companyServiceUrl) {
+                         @Value("${external.company-service.url}") String companyServiceUrl) {
         this.restTemplate = restTemplate;
         this.companyServiceUrl = companyServiceUrl;
     }
 
-    public boolean verifyCompany(String registrationNumber) {
+    // FIX: Changed return type from boolean to CompanyVerificationResponse to carry data back
+    public CompanyVerificationResponse verifyCompany(String registrationNumber) {
         String url = companyServiceUrl + "/api/v1/company/verify";
         log.info("Calling Company CRV Service at: {}", url);
 
@@ -41,18 +42,15 @@ public class CompanyClient {
 
             if (response != null) {
                 log.info("Company verification response: {}", response);
-                return response.isValid();
+                return response;
             } else {
                 log.warn("Received null response from Company CRV Service");
-                return false;
+                return null;
             }
 
         } catch (RestClientException e) {
             log.error("Error communicating with Company CRV Service", e);
-            // In a real scenario, we might want to throw a specific service unavailable
-            // exception
-            // or return false depending on requirements. Assuming strict validation needed:
-            return false;
+            return null;
         }
     }
 
@@ -65,6 +63,11 @@ public class CompanyClient {
 
         @JsonProperty("is_valid")
         private boolean isValid;
+
+        // FIX: Added company_name property mapping to capture the registry data
+        @JsonProperty("company_name")
+        @com.fasterxml.jackson.annotation.JsonAlias("companyName")
+        private String companyName;
 
         private String status;
         private String message;

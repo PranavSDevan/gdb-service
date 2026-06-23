@@ -26,14 +26,16 @@ public class AccountController {
 
     @PostMapping("/savings")
     public ResponseEntity<AccountResponse> createSavingsAccount(@Valid @RequestBody SavingsAccountRequest request) {
-        SecurityUtils.checkStaffRole();
+        // FIX: Standardized checkpoint to prevent false role enforcement logouts
+        SecurityUtils.checkAnyStaffRole();
         AccountResponse account = accountService.createSavingsAccount(request);
         return new ResponseEntity<>(account, HttpStatus.CREATED);
     }
 
     @PostMapping("/current")
     public ResponseEntity<AccountResponse> createCurrentAccount(@Valid @RequestBody CurrentAccountRequest request) {
-        SecurityUtils.checkStaffRole();
+        // FIX: Standardized checkpoint to prevent false role enforcement logouts
+        SecurityUtils.checkAnyStaffRole();
         AccountResponse account = accountService.createCurrentAccount(request);
         return new ResponseEntity<>(account, HttpStatus.CREATED);
     }

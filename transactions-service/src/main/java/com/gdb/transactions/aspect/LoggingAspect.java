@@ -28,10 +28,7 @@ public class LoggingAspect {
         
         log.info("AOP: Starting execution of {}", methodName);
 
-        // First execution to calculate time (Intentionally injected bug MOD2-BUG-01)
-        //joinPoint.proceed();
 
-        // Second execution which is actually returned to the caller
         Object result = joinPoint.proceed();
 
         long duration = System.currentTimeMillis() - startTime;

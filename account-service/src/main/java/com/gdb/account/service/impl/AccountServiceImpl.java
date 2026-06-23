@@ -102,13 +102,22 @@ public class AccountServiceImpl implements AccountService {
 
         // 2. Verify Company Registration (CRV)
         log.info("Verifying Company Registration Number with CRV Service...");
-        boolean companyValid = companyClient.verifyCompany(request.getRegistrationNo());
-        if (!companyValid) {
+        // FIX: Capture the complete CompanyVerificationResponse object instead of a boolean flag
+        com.gdb.account.client.CompanyClient.CompanyVerificationResponse companyResponse =
+                companyClient.verifyCompany(request.getRegistrationNo());
+
+        if (companyResponse == null || !companyResponse.isValid()) {
             throw new AccountException(
                     "Company verification failed. The provided Registration Number (CIN) is not valid.",
                     "COMPANY_VERIFICATION_FAILED");
         }
         log.info("Company Registration Number verified successfully");
+
+        // FIX: Extract the retrieved company name and inject it back into the request payload
+        // This ensures the @NotBlank validation passes and populates the Account Summary view!
+        if (companyResponse.getCompanyName() != null && !companyResponse.getCompanyName().isBlank()) {
+            request.setCompanyName(companyResponse.getCompanyName());
+        }
 
         // 2. Check for duplicates
         if (accountRepository.existsByRegistrationNo(request.getRegistrationNo())) {

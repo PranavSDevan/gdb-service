@@ -17,6 +17,7 @@ public class CurrentAccountRequest {
     @NotBlank
     @Size(min = 1, max = 255)
     @JsonProperty("company_name")
+    @com.fasterxml.jackson.annotation.JsonAlias("companyName") // FIX: Accepts both formats smoothly
     private String companyName;
 
     @NotBlank

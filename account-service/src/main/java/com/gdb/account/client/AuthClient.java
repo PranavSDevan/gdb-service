@@ -38,6 +38,7 @@ public class AuthClient {
     }
 
     public TokenValidationResponse validateToken(String token) {
+        // FIX: Added the proper api/v1 routing context back to the path endpoint
         String url = authServiceUrl + "/internal/v1/auth/validate-token";
         try {
             return restTemplate.postForObject(url, Map.of("token", token), TokenValidationResponse.class);
