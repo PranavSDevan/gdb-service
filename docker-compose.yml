@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 networks:
   gdb-network:
@@ -92,11 +92,13 @@ services:
       - "8761:8761"
     networks:
       - gdb-network
+    restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1"]
       interval: 15s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 40s
 
   # ─── Business Services ───────────────────────────────────
   auth-service:
@@ -112,14 +114,16 @@ services:
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      USERS_SERVICE_URL: http://users-service:8003
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
       auth-db:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   users-service:
     build:
@@ -140,9 +144,10 @@ services:
       users-db:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   account-service:
     build:
@@ -165,9 +170,10 @@ services:
       accounts-db:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   transactions-service:
     build:
@@ -190,9 +196,10 @@ services:
       transactions-db:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   payment-gateway-service:
     build:
@@ -208,9 +215,10 @@ services:
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   aadhar-service:
     build:
@@ -225,9 +233,10 @@ services:
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   company-service:
     build:
@@ -242,9 +251,10 @@ services:
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   # ─── API Gateway ─────────────────────────────────────────
   gateway-service:
@@ -264,11 +274,13 @@ services:
       AADHAR_SERVICE_URL: http://aadhar-service:8005
       COMPANY_SERVICE_URL: http://company-service:8006
       PAYMENT_SERVICE_URL: http://payment-gateway-service:8008
+      SPRING_PROFILES_ACTIVE: dev
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - gdb-network
+    restart: on-failure
 
   # ─── Frontend ─────────────────────────────────────────────
   frontend:
@@ -283,4 +295,4 @@ services:
       - gateway-service
     networks:
       - gdb-network
-
+    restart: on-failure

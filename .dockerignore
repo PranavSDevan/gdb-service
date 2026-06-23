@@ -1,5 +1,5 @@
-target
 **/target
 .git
 .idea
-node_modules
+**/node_modules
+**/.env.local
