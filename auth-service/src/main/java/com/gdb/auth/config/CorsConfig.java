@@ -13,7 +13,7 @@ import java.util.Arrays;
 /**
  * CORS configuration for the auth service.
  */
-//@Configuration
+@Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
     @Override
