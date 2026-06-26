@@ -2,6 +2,7 @@ package com.gdb.account.service.impl;
 
 import com.gdb.account.client.AadharClient;
 import com.gdb.account.client.CompanyClient;
+import com.gdb.account.client.UserClient;
 import com.gdb.account.domain.model.Account;
 import com.gdb.account.dto.request.AccountOperationRequest;
 import com.gdb.account.dto.request.SavingsAccountRequest;
@@ -34,6 +35,7 @@ public class AccountServiceImpl implements AccountService {
     private final AccountFactory accountFactory;
     private final AadharClient aadharClient;
     private final CompanyClient companyClient;
+    private final UserClient userClient;
 
     // TODO: MOD1-BUG-01: Injection point. Note that required=false prevents application startup crash.
     @org.springframework.beans.factory.annotation.Autowired
@@ -198,11 +200,25 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException("Account not found with number: " + accountNumber,
                         AccountConstants.ACCOUNT_NOT_FOUND));
+
+        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
+        if (context != null && context.getRole() != null) {
+            String role = context.getRole().toUpperCase().trim();
+            if (role.startsWith("ROLE_")) {
+                role = role.substring(5);
+            }
+            if ("TELLER".equals(role)) {
+                String tellerName = userClient.getUsername(context.getLoginId());
+                if (tellerName == null || !account.getName().equalsIgnoreCase(tellerName)) {
+                    throw new AccountException("Access Denied: Tellers can only view their own accounts.", "ACCESS_DENIED");
+                }
+            }
+        }
+
         return AccountMapper.toResponse(account);
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
-    private com.gdb.account.client.UserClient userClient;
+
 
     @Override
     public List<AccountResponse> getAllAccounts(String type, String privilege, Boolean isActive) {

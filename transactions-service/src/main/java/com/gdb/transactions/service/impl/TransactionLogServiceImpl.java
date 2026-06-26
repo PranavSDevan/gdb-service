@@ -2,8 +2,10 @@ package com.gdb.transactions.service.impl;
 
 import com.gdb.transactions.domain.enums.TransactionType;
 import com.gdb.transactions.domain.model.TransactionLog;
+import com.gdb.transactions.domain.model.FundTransfer;
 import com.gdb.transactions.dto.response.TransactionLogResponse;
 import com.gdb.transactions.repository.TransactionLogRepository;
+import com.gdb.transactions.repository.FundTransferRepository;
 import com.gdb.transactions.service.TransactionLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class TransactionLogServiceImpl implements TransactionLogService {
 
     private final TransactionLogRepository transactionLogRepository;
+    private final FundTransferRepository fundTransferRepository;
 
     @Override
     public TransactionLog logTransaction(TransactionLog transactionLog) {
@@ -74,11 +78,29 @@ public class TransactionLogServiceImpl implements TransactionLogService {
     }
 
     private TransactionLogResponse mapToResponse(TransactionLog log) {
+        Long fromAccount = null;
+        Long toAccount = null;
+
+        if (log.getTransactionType() == TransactionType.TRANSFER && log.getReferenceId() != null) {
+            Optional<FundTransfer> transferOpt = fundTransferRepository.findById(log.getReferenceId());
+            if (transferOpt.isPresent()) {
+                FundTransfer transfer = transferOpt.get();
+                fromAccount = transfer.getFromAccount();
+                toAccount = transfer.getToAccount();
+            }
+        }
+
         return TransactionLogResponse.builder()
                 .id(log.getId())
                 .accountNumber(log.getAccountNumber())
                 .amount(log.getAmount())
                 .transactionType(log.getTransactionType())
+                .referenceId(log.getReferenceId())
+                .description(log.getDescription())
+                .mode(log.getMode())
+                .status(log.getStatus())
+                .fromAccount(fromAccount)
+                .toAccount(toAccount)
                 .createdAt(log.getCreatedAt())
                 .description(log.getDescription())
                 .mode(log.getMode())

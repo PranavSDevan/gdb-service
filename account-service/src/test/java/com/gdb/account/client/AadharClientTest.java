@@ -20,8 +20,12 @@ public class AadharClientTest {
     @Mock
     private RestTemplate restTemplate;
 
-    @InjectMocks
     private AadharClient aadharClient;
+
+    @org.junit.jupiter.api.BeforeEach
+    public void setUp() {
+        aadharClient = new AadharClient(restTemplate, "http://localhost:8005");
+    }
 
     @Test
     public void testVerifyAadhar_Success() {

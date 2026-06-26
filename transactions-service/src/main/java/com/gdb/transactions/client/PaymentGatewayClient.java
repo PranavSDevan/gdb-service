@@ -34,7 +34,7 @@ public class PaymentGatewayClient {
 
     private final WebClient webClient;
 
-    @Value("${external.payment-gateway-service.url}")
+    @Value("${external.payment-gateway-service.url:http://localhost:8008}")
     private String paymentGatewayUrl;
 
     @Value("${external.payment-gateway-service.timeout:10000}")

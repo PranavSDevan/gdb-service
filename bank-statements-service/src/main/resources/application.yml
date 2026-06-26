@@ -52,7 +52,7 @@ eureka:
   instance:
     prefer-ip-address: true
 
-# Downstream Microservices URLs
-transactions:
-  service:
-    url: ${TRANSACTIONS_SERVICE_URL:http://localhost:8002}
+app:
+  services:
+    transactions-url: ${TRANSACTIONS_SERVICE_URL:http://localhost:8002}
+    accounts-url: ${ACCOUNTS_SERVICE_URL:http://localhost:8001}

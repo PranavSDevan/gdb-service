@@ -37,5 +37,8 @@ public class CreditCard {
     @Column(name = "next_due_date")
     private LocalDate nextDueDate;
     
+    @Column(name = "card_holder_name")
+    private String cardHolderName;
+
     private String status = "ACTIVE"; // ACTIVE, INACTIVE, BLOCKED
 }

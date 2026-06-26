@@ -10,6 +10,15 @@ const PayCreditCardBill = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const formatCardNumber = (num) => {
+    if (!num) return '';
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('*')) {
+      return `**** **** **** ${clean.slice(-4)}`;
+    }
+    return clean.replace(/(.{4})/g, '$1 ').trim();
+  };
   
   const [formData, setFormData] = useState({
     amount: '',
@@ -172,7 +181,7 @@ const PayCreditCardBill = () => {
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-400">Card Number</span>
-                <span className="font-semibold">{data?.cardNumber}</span>
+                <span className="font-semibold">{formatCardNumber(data?.cardNumber)}</span>
               </div>
             </div>
           </div>
@@ -297,7 +306,7 @@ const PayCreditCardBill = () => {
                         </div>
                         <div className="flex justify-between text-sm mb-2">
                           <span className="text-gray-500">To Card:</span>
-                          <span className="font-medium text-gray-900">{data?.cardNumber}</span>
+                          <span className="font-medium text-gray-900">{formatCardNumber(data?.cardNumber)}</span>
                         </div>
                         <div className="flex justify-between text-base border-t border-gray-200 pt-2 mt-2">
                           <span className="font-semibold text-gray-900">Payment Amount:</span>

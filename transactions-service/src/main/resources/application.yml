@@ -19,6 +19,13 @@ app:
   services:
     auth-url: ${AUTH_SERVICE_URL:http://localhost:8004}
 
+# External service client URLs
+external:
+  account-service:
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8001}
+  payment-gateway-service:
+    url: ${PAYMENT_GATEWAY_SERVICE_URL:http://localhost:8008}
+
 # Eureka Client Configuration (shared across all profiles)
 eureka:
   client:

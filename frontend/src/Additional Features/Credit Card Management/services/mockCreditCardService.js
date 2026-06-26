@@ -15,6 +15,7 @@ let mockCards = [
     minimumDue: 18750,
     nextDueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'Active',
+    cardHolderName: 'John Doe'
   }
 ];
 
@@ -102,9 +103,11 @@ export const creditCardService = {
     if (USE_REAL_API) {
       try {
         const userId = useAuthStore.getState().user?.id || 'admin';
+        const fullName = useAuthStore.getState().user?.full_name || 'Cardholder';
         const payload = {
           userId,
-          cardType: applicationData.cardType
+          cardType: applicationData.cardType,
+          cardHolderName: fullName
         };
         const response = await creditCardsApi.post(`/api/v1/credit-cards/apply`, payload);
         return { 
@@ -140,6 +143,7 @@ export const creditCardService = {
       minimumDue: 0,
       nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'Active',
+      cardHolderName: useAuthStore.getState().user?.full_name || 'Cardholder'
     };
 
     mockCards.push(newCard);
@@ -152,6 +156,9 @@ export const creditCardService = {
   },
 
   getTransactions: async (filters, cardId = null) => {
+    let txns = [];
+    let isMockFallback = false;
+
     if (USE_REAL_API) {
       try {
         if (!cardId) {
@@ -162,16 +169,22 @@ export const creditCardService = {
           cardId = cards[0].id;
         }
         const response = await creditCardsApi.get(`/api/v1/credit-cards/${cardId}/transactions`);
-        return response.data;
+        txns = response.data;
       } catch (error) {
         console.warn("Failed fetching credit card transactions, falling back to mock:", error);
+        isMockFallback = true;
       }
+    } else {
+      isMockFallback = true;
     }
 
-    await delay(800);
-    const targetCardId = cardId || mockCards[0]?.id;
-    let filtered = mockTransactions.filter(t => t.cardId === targetCardId);
+    if (isMockFallback) {
+      await delay(800);
+      const targetCardId = cardId || mockCards[0]?.id;
+      txns = mockTransactions.filter(t => t.cardId === targetCardId);
+    }
     
+    let filtered = [...txns];
     if (filters) {
       if (filters.type && filters.type !== 'All') {
         filtered = filtered.filter(t => t.type === filters.type);

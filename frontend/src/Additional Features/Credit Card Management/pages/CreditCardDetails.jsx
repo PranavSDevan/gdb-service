@@ -12,6 +12,24 @@ const CreditCardDetails = () => {
   const [cards, setCards] = useState([]);
   const [selectedCardId, setSelectedCardId] = useState('');
 
+  const formatCardNumber = (num) => {
+    if (!num) return '';
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('*')) {
+      return `**** **** **** ${clean.slice(-4)}`;
+    }
+    return clean.replace(/(.{4})/g, '$1 ').trim();
+  };
+
+  const formatCardNumber = (num) => {
+    if (!num) return '';
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('*')) {
+      return `**** **** **** ${clean.slice(-4)}`;
+    }
+    return clean.replace(/(.{4})/g, '$1 ').trim();
+  };
+
   useEffect(() => {
     loadCards();
   }, []);
@@ -147,7 +165,7 @@ const CreditCardDetails = () => {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Card Number</p>
-              <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">{data.cardNumber}</p>
+              <p className="text-lg font-mono font-bold text-gray-900 tracking-wider">{formatCardNumber(data.cardNumber)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">

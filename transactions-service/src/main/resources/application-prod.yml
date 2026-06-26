@@ -18,3 +18,5 @@ transfer:
 external:
   account-service:
     url: ${ACCOUNT_SERVICE_URL}
+  payment-gateway-service:
+    url: ${PAYMENT_GATEWAY_SERVICE_URL}

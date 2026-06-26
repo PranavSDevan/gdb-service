@@ -3,6 +3,7 @@ package com.gdb.creditcards.service.impl;
 import com.gdb.creditcards.domain.CreditCard;
 import com.gdb.creditcards.domain.CreditCardTransaction;
 import com.gdb.creditcards.dto.CreditCardDto;
+import com.gdb.creditcards.dto.CreditCardTransactionDto;
 import com.gdb.creditcards.repository.CreditCardRepository;
 import com.gdb.creditcards.repository.CreditCardTransactionRepository;
 import com.gdb.creditcards.service.CreditCardService;
@@ -46,15 +47,36 @@ public class CreditCardServiceImpl implements CreditCardService {
         // Generate a valid-looking 16-digit card number
         card.setCardNumber("4111" + (100000000000L + (long)(random.nextDouble() * 900000000000L)));
         card.setCreditLimit(limit);
-        card.setAvailableCredit(limit);
-        card.setOutstandingAmount(0.0);
-        card.setMinimumDue(0.0);
+        
+        // Seed outstanding balance for testing pay bills options
+        double outstanding = "PLATINUM".equalsIgnoreCase(application.getCardType()) ? 100000.0 :
+                             "GOLD".equalsIgnoreCase(application.getCardType()) ? 50000.0 : 15000.0;
+        card.setOutstandingAmount(outstanding);
+        card.setAvailableCredit(limit - outstanding);
+        card.setMinimumDue(outstanding * 0.05); // 5% minimum payment due
         card.setNextDueDate(LocalDate.now().plusDays(30));
+        card.setCardHolderName(application.getCardHolderName());
         card.setStatus("ACTIVE");
 
         CreditCard saved = creditCardRepository.save(card);
-        seedMockTransactions(saved.getId());
+
+        // Seed 3 purchase transactions for this new card to populate transaction logs
+        seedTransaction(saved.getId(), LocalDateTime.now().minusHours(2), "Amazon", outstanding * 0.70, "Purchase");
+        seedTransaction(saved.getId(), LocalDateTime.now().minusHours(5), "Starbucks", outstanding * 0.10, "Purchase");
+        seedTransaction(saved.getId(), LocalDateTime.now().minusDays(1), "Uber", outstanding * 0.20, "Purchase");
+
         return convertToDto(saved);
+    }
+
+    private void seedTransaction(String cardId, LocalDateTime date, String merchant, Double amount, String type) {
+        CreditCardTransaction transaction = new CreditCardTransaction();
+        transaction.setCardId(cardId);
+        transaction.setDate(date);
+        transaction.setMerchant(merchant);
+        transaction.setAmount(amount);
+        transaction.setType(type);
+        transaction.setStatus("COMPLETED");
+        creditCardTransactionRepository.save(transaction);
     }
 
     @Override
@@ -84,15 +106,15 @@ public class CreditCardServiceImpl implements CreditCardService {
 
         CreditCard saved = creditCardRepository.save(card);
 
-        // Save payment transaction record to database
-        CreditCardTransaction paymentTx = new CreditCardTransaction();
-        paymentTx.setCardId(id);
-        paymentTx.setMerchant("Credit Card Bill Payment");
-        paymentTx.setAmount(amount);
-        paymentTx.setType("Payment");
-        paymentTx.setDate(LocalDateTime.now());
-        paymentTx.setStatus("Completed");
-        creditCardTransactionRepository.save(paymentTx);
+        // Record the bill payment transaction in the database
+        CreditCardTransaction transaction = new CreditCardTransaction();
+        transaction.setCardId(id);
+        transaction.setDate(LocalDateTime.now());
+        transaction.setMerchant("Credit Card Bill Payment");
+        transaction.setAmount(amount);
+        transaction.setType("Payment");
+        transaction.setStatus("COMPLETED");
+        creditCardTransactionRepository.save(transaction);
 
         return convertToDto(saved);
     }
@@ -123,14 +145,50 @@ public class CreditCardServiceImpl implements CreditCardService {
         CreditCardDto dto = new CreditCardDto();
         dto.setId(card.getId());
         dto.setUserId(card.getUserId());
-        dto.setCardNumber(card.getCardNumber());
+        
+        // Format the card number with spaces if it is a 16-digit string
+        String rawNumber = card.getCardNumber();
+        if (rawNumber != null) {
+            String cleanNumber = rawNumber.replaceAll("\\s+", "");
+            if (cleanNumber.length() == 16) {
+                dto.setCardNumber(cleanNumber.substring(0, 4) + " " + 
+                                  cleanNumber.substring(4, 8) + " " + 
+                                  cleanNumber.substring(8, 12) + " " + 
+                                  cleanNumber.substring(12, 16));
+            } else {
+                dto.setCardNumber(rawNumber);
+            }
+        } else {
+            dto.setCardNumber(null);
+        }
+        
         dto.setCardType(card.getCardType());
         dto.setCreditLimit(card.getCreditLimit());
         dto.setAvailableCredit(card.getAvailableCredit());
         dto.setOutstandingAmount(card.getOutstandingAmount());
         dto.setMinimumDue(card.getMinimumDue());
         dto.setNextDueDate(card.getNextDueDate());
+        dto.setCardHolderName(card.getCardHolderName());
         dto.setStatus(card.getStatus());
+        return dto;
+    }
+
+    @Override
+    public List<CreditCardTransactionDto> getCardTransactions(String cardId) {
+        return creditCardTransactionRepository.findByCardIdOrderByDateDesc(cardId).stream()
+                .map(this::convertToTransactionDto)
+                .collect(Collectors.toList());
+    }
+
+    private CreditCardTransactionDto convertToTransactionDto(CreditCardTransaction txn) {
+        CreditCardTransactionDto dto = new CreditCardTransactionDto();
+        dto.setId(txn.getId());
+        dto.setCardId(txn.getCardId());
+        dto.setDate(txn.getDate());
+        dto.setMerchant(txn.getMerchant());
+        dto.setAmount(txn.getAmount());
+        dto.setType(txn.getType());
+        dto.setStatus(txn.getStatus());
         return dto;
     }
 }

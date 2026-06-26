@@ -13,6 +13,7 @@ if (Test-Path $envFile) {
 }
 
 $services = @(
+    "eureka-server",
     "auth-service",
     "account-service",
     "aadhar-service",
@@ -23,7 +24,8 @@ $services = @(
     "credit-cards-service",
     "bank-statements-service",
     "settings-service",
-    "ai-service"
+    "ai-service",
+    "gateway-service"
 )
 
 Write-Host "Starting all services..." -ForegroundColor Cyan

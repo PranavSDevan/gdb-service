@@ -36,7 +36,7 @@ public class AccountServiceClient {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${external.account-service.url}")
+    @Value("${external.account-service.url:http://localhost:8001}")
     private String accountServiceUrl;
 
     @Value("${external.account-service.timeout:10000}")

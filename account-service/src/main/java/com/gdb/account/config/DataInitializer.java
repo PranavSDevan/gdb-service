@@ -50,6 +50,28 @@ public class DataInitializer implements CommandLineRunner {
                 VALUES (?, ?, ?, ?)
                 """, 1002L, "Admin Tech Corp", "admintech.com", "U12345MH2020PTC123456");
 
+            // Seed Savings Account (Teller User)
+            jdbcTemplate.update("""
+                INSERT INTO accounts (account_number, account_type, name, pin_hash, balance, privilege, bank_name, bank_branch, ifsc_code, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, 1003L, "SAVINGS", "Teller User", pinHash, new BigDecimal("75000.00"), "GOLD", "Global Digital Bank", "Main Branch", "GDB0000001", true);
+
+            jdbcTemplate.update("""
+                INSERT INTO savings_account_details (account_number, date_of_birth, gender, phone_no, aadhar_number)
+                VALUES (?, ?::date, ?::gender_enum, ?, ?)
+                """, 1003L, "1995-05-15", "Female", "9876543211", "123456789013");
+
+            // Seed Current Account (Manager User)
+            jdbcTemplate.update("""
+                INSERT INTO accounts (account_number, account_type, name, pin_hash, balance, privilege, bank_name, bank_branch, ifsc_code, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, 1004L, "CURRENT", "Manager User", pinHash, new BigDecimal("180000.00"), "PREMIUM", "Global Digital Bank", "Main Branch", "GDB0000001", true);
+
+            jdbcTemplate.update("""
+                INSERT INTO current_account_details (account_number, company_name, website, registration_no)
+                VALUES (?, ?, ?, ?)
+                """, 1004L, "Manager LLC", "managerllc.com", "U12345MH2021PTC123456");
+
             // Update sequence value so next generated number doesn't conflict
             jdbcTemplate.execute("SELECT setval('account_number_seq', 1005)");
 

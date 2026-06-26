@@ -35,7 +35,7 @@ public class CreditCardController {
 
     @GetMapping("/{id}/transactions")
     public ResponseEntity<?> getCardTransactions(@PathVariable String id) {
-        return ResponseEntity.ok(creditCardTransactionRepository.findByCardIdOrderByDateDesc(id));
+        return ResponseEntity.ok(creditCardService.getCardTransactions(id));
     }
 
     @PostMapping("/{id}/pay")

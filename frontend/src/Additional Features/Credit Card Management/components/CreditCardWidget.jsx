@@ -6,14 +6,24 @@ const CreditCardWidget = ({ data }) => {
   const { user } = useAuthStore();
   if (!data) return null;
 
+  const formatCardNumber = (num) => {
+    if (!num) return '';
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('*')) {
+      return `**** **** **** ${clean.slice(-4)}`;
+    }
+    return clean.replace(/(.{4})/g, '$1 ').trim();
+  };
+
   // Determine card style based on type
   const getCardStyle = (type) => {
-    switch (type) {
-      case 'Platinum':
+    const normalizedType = (type || '').toLowerCase();
+    switch (normalizedType) {
+      case 'platinum':
         return 'from-gray-900 to-gray-700 text-white';
-      case 'Gold':
+      case 'gold':
         return 'from-yellow-500 to-yellow-300 text-yellow-900';
-      case 'Silver':
+      case 'silver':
       default:
         return 'from-gray-300 to-gray-100 text-gray-800';
     }
@@ -39,14 +49,14 @@ const CreditCardWidget = ({ data }) => {
         <div className="flex items-center gap-4">
           <div className="w-12 h-8 bg-yellow-200 rounded-md opacity-80"></div>
           <div className="tracking-[0.2em] font-mono text-lg lg:text-xl font-medium">
-            {data.cardNumber}
+            {formatCardNumber(data.cardNumber)}
           </div>
         </div>
 
         <div className="flex justify-between items-end">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase opacity-75 tracking-wider">Card Holder</span>
-            <span className="font-medium tracking-wide uppercase">{user?.username || 'CARDHOLDER NAME'}</span>
+            <span className="font-medium tracking-wide uppercase">{data.cardHolderName || 'CARDHOLDER NAME'}</span>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[10px] uppercase opacity-75 tracking-wider">Status</span>

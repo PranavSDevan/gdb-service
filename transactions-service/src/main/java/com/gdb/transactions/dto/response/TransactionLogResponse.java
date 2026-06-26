@@ -24,6 +24,15 @@ public class TransactionLogResponse {
     private BigDecimal amount;
     @JsonProperty("transaction_type")
     private TransactionType transactionType;
+    @JsonProperty("reference_id")
+    private Long referenceId;
+    private String description;
+    private String mode;
+    private String status;
+    @JsonProperty("from_account")
+    private Long fromAccount;
+    @JsonProperty("to_account")
+    private Long toAccount;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
     private String description;

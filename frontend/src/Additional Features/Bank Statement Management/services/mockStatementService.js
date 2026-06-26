@@ -83,7 +83,7 @@ export const statementService = {
         const targetAccountNumber = account ? (account.account_number || account.accountNumber) : accountId;
 
         const payload = {
-          accountId: targetAccountNumber,
+          accountId: String(targetAccountNumber),
           fromDate,
           toDate,
           format
@@ -92,49 +92,72 @@ export const statementService = {
         const response = await statementsApi.post('/api/v1/statements/generate', payload);
         const statementDto = response.data;
 
-        // Try to fetch real transactions for the preview table
         let transactions = [];
-        try {
-          // Attempt using transactions service endpoint for account transaction history
-          const txResponse = await transactionsApi.get(`/api/v1/transactions/account/${targetAccountNumber}`);
-          const rawLogs = txResponse.data?.logs || txResponse.data || [];
-          
-          transactions = rawLogs
-            .map(tx => {
-              const txDate = tx.transactionDate || tx.timestamp || tx.createdAt || tx.created_at;
-              const txType = tx.transactionType || tx.type || '';
-              const txAmt = parseFloat(tx.amount || 0);
-              const isCredit = txType.toUpperCase() === 'DEPOSIT' || txType.toUpperCase() === 'CREDIT';
-              
-              return {
-                id: tx.id || tx.transactionId || `TXN${Math.floor(Math.random() * 1000000)}`,
-                date: txDate,
-                description: tx.description || `${txType} transaction`,
-                type: isCredit ? 'CREDIT' : 'DEBIT',
-                debit: isCredit ? null : txAmt,
-                credit: isCredit ? txAmt : null,
-                balance: tx.balanceAfter || tx.balance || 0
-              };
-            })
-            .filter(tx => {
-              const d = new Date(tx.date);
-              const start = new Date(fromDate);
-              const end = new Date(toDate);
-              end.setHours(23, 59, 59, 999);
-              return d >= start && d <= end;
-            });
-        } catch (txError) {
-          console.warn("Failed fetching transaction history, generating mock transactions fallback:", txError);
-          transactions = generateMockTransactions(fromDate, toDate, accountId);
+        let summary = null;
+
+        if (statementDto && statementDto.transactions) {
+          transactions = statementDto.transactions.map(tx => {
+            return {
+              id: tx.id || `TXN${Math.floor(Math.random() * 1000000)}`,
+              date: tx.transactionDate,
+              description: tx.description,
+              type: tx.transactionType,
+              debit: tx.transactionType === 'DEBIT' ? tx.amount : null,
+              credit: tx.transactionType === 'CREDIT' ? tx.amount : null,
+              balance: tx.balance
+            };
+          });
+          summary = statementDto.summary;
+        } else {
+          // Try to fetch real transactions for the preview table as fallback
+          try {
+            const txResponse = await transactionsApi.get(`/api/v1/transactions/account/${targetAccountNumber}`);
+            const rawLogs = txResponse.data?.logs || txResponse.data || [];
+            
+            transactions = rawLogs
+              .map(tx => {
+                const txDate = tx.transactionDate || tx.timestamp || tx.createdAt || tx.created_at;
+                const txType = tx.transaction_type || tx.transactionType || tx.type || '';
+                const txAmt = parseFloat(tx.amount || 0);
+                const isCredit = txType.toUpperCase() === 'DEPOSIT' || txType.toUpperCase() === 'CREDIT';
+                
+                return {
+                  id: tx.id || tx.transactionId || `TXN${Math.floor(Math.random() * 1000000)}`,
+                  date: txDate,
+                  description: tx.description || `${txType} transaction`,
+                  type: isCredit ? 'CREDIT' : 'DEBIT',
+                  debit: isCredit ? null : txAmt,
+                  credit: isCredit ? txAmt : null,
+                  balance: tx.balanceAfter || tx.balance || 0
+                };
+              })
+              .filter(tx => {
+                const d = new Date(tx.date);
+                const start = new Date(fromDate);
+                const end = new Date(toDate);
+                end.setHours(23, 59, 59, 999);
+                return d >= start && d <= end;
+              });
+          } catch (txError) {
+            console.warn("Failed fetching transaction history, generating mock transactions fallback:", txError);
+            transactions = generateMockTransactions(fromDate, toDate, accountId);
+          }
         }
 
-        // Compute summary values for preview
-        const totalCredits = transactions.filter(t => t.type === 'CREDIT').reduce((sum, t) => sum + (t.credit || 0), 0);
-        const totalDebits = transactions.filter(t => t.type === 'DEBIT').reduce((sum, t) => sum + (t.debit || 0), 0);
-        
-        const sortedAsc = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-        const openingBalance = sortedAsc.length > 0 ? sortedAsc[0].balance - (sortedAsc[0].type === 'CREDIT' ? sortedAsc[0].credit : -sortedAsc[0].debit) : (account ? account.balance : 0);
-        const closingBalance = sortedAsc.length > 0 ? sortedAsc[sortedAsc.length - 1].balance : (account ? account.balance : 0);
+        if (!summary) {
+          const totalCredits = transactions.filter(t => t.type === 'CREDIT').reduce((sum, t) => sum + (t.credit || 0), 0);
+          const totalDebits = transactions.filter(t => t.type === 'DEBIT').reduce((sum, t) => sum + (t.debit || 0), 0);
+          const sortedAsc = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+          const openingBalance = sortedAsc.length > 0 ? sortedAsc[0].balance - (sortedAsc[0].type === 'CREDIT' ? sortedAsc[0].credit : -sortedAsc[0].debit) : (account ? account.balance : 0);
+          const closingBalance = sortedAsc.length > 0 ? sortedAsc[sortedAsc.length - 1].balance : (account ? account.balance : 0);
+          summary = {
+            openingBalance,
+            closingBalance,
+            totalCredits,
+            totalDebits,
+            transactionCount: transactions.length
+          };
+        }
 
         currentStatementData = {
           id: statementDto.id,
@@ -147,13 +170,7 @@ export const statementService = {
           },
           period: { fromDate, toDate },
           format,
-          summary: {
-            openingBalance,
-            closingBalance,
-            totalCredits,
-            totalDebits,
-            transactionCount: transactions.length
-          },
+          summary,
           transactions,
           downloadUrl: statementDto.downloadUrl
         };

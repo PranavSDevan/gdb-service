@@ -14,5 +14,6 @@ public class CreditCardDto {
     private Double outstandingAmount;
     private Double minimumDue;
     private LocalDate nextDueDate;
+    private String cardHolderName;
     private String status;
 }
