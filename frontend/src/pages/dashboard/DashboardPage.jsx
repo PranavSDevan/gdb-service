@@ -4,7 +4,9 @@ import { useAuthStore } from '../../store/authStore';
 import { useAccountStore } from '../../store/accountStore';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useUserStore } from '../../store/userStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { transactionsService, accountsService } from '../../services/api';
+
 import {
   CreditCard,
   Users,
@@ -46,6 +48,10 @@ const DashboardPage = () => {
   const { transactions, fetchTransactions, getStatistics: getTransactionStats } = useTransactionStore();
   const { users, fetchUsers, getStatistics: getUserStats } = useUserStore();
   const [loading, setLoading] = useState(true);
+  const t = useSettingsStore((state) => state.t);
+  const formatDate = useSettingsStore((state) => state.formatDateString);
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
+
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [serviceStatus, setServiceStatus] = useState({
@@ -297,13 +303,6 @@ const DashboardPage = () => {
     { name: 'Silver', value: accountList.filter(a => a && a.privilege === 'SILVER').length, color: '#6b7280' },
   ];
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
 
   const recentTransactions = (transactions || []).slice(0, 5);
 
@@ -327,24 +326,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Safe date formatting helper - converts UTC timestamp to local time
-  const formatDate = (dateValue, formatStr = 'MMM d, h:mm a') => {
-    if (!dateValue) return 'N/A';
-    try {
-      // Backend returns UTC timestamps without 'Z' suffix
-      // Add 'Z' to indicate UTC, so JavaScript converts to local time correctly
-      let dateStr = String(dateValue);
-      if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
-        // Replace space with 'T' for ISO format and add 'Z' for UTC
-        dateStr = dateStr.replace(' ', 'T') + 'Z';
-      }
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return 'N/A';
-      return format(date, formatStr);
-    } catch {
-      return 'N/A';
-    }
-  };
 
   if (loading) {
     return (
@@ -389,9 +370,9 @@ const DashboardPage = () => {
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="page-title">Welcome back, {user?.username?.split(' ')[0]}!</h1>
+          <h1 className="page-title">{t('welcome') || 'Welcome back'}, {user?.username?.split(' ')[0]}!</h1>
           <p className="text-gray-500 mt-1">
-            Here's what's happening with your bank today.
+            {t('welcome_subtitle') || "Here's what's happening with your bank today."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -415,7 +396,7 @@ const DashboardPage = () => {
         <div className="card p-6 bg-gradient-to-br from-primary-500 to-primary-700 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-primary-100 text-sm font-medium">Total Balance</p>
+              <p className="text-primary-100 text-sm font-medium">{t('totalBalance')}</p>
               <p className="text-2xl font-bold mt-1">{formatCurrency(accountStats.totalBalance)}</p>
               <p className={`text-sm mt-2 flex items-center gap-1 ${dashboardStats.monthlyGrowth >= 0 ? 'text-primary-200' : 'text-red-200'}`}>
                 {dashboardStats.monthlyGrowth >= 0 ? (
@@ -436,7 +417,7 @@ const DashboardPage = () => {
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Total Accounts</p>
+              <p className="text-gray-500 text-sm font-medium">{t('totalAccounts')}</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">{accountStats.totalAccounts}</p>
               <p className="text-sm mt-2">
                 <span className="text-green-600 font-medium">{accountStats.activeAccounts} active</span>
@@ -454,7 +435,7 @@ const DashboardPage = () => {
         <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Today's Transactions</p>
+              <p className="text-gray-500 text-sm font-medium">{t('todayTransactions')}</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">{todayStats.total}</p>
               <p className="text-sm mt-2">
                 <span className="text-green-600 font-medium">{todayStats.deposits} deposits</span>
@@ -467,6 +448,7 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
+
 
         {/* Users (Admin Only) or Transfers */}
         {checkRole('ADMIN') ? (

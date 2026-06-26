@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAccountStore } from '../../store/accountStore';
 import { useAuthStore } from '../../store/authStore';
+import { useSettingsStore } from '../../store/settingsStore';
+
 import {
   Search,
   Filter,
@@ -30,6 +32,10 @@ const TransactionsPage = () => {
   const { hasRole } = useAuthStore();
   const { transactions, isLoading, fetchTransactions } = useTransactionStore();
   const { accounts, fetchAccounts } = useAccountStore();
+  const t = useSettingsStore((state) => state.t);
+  const safeFormatDate = useSettingsStore((state) => state.formatDateString);
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -146,32 +152,6 @@ const TransactionsPage = () => {
     currentPage * itemsPerPage
   );
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-  };
-
-  // Safe date formatting helper - converts UTC timestamp to local time
-  const safeFormatDate = (dateValue, formatStr = 'MMM d, yyyy • h:mm a') => {
-    if (!dateValue) return 'N/A';
-    try {
-      // Backend returns UTC timestamps without 'Z' suffix
-      // Add 'Z' to indicate UTC, so JavaScript converts to local time correctly
-      let dateStr = String(dateValue);
-      if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
-        // Replace space with 'T' for ISO format and add 'Z' for UTC
-        dateStr = dateStr.replace(' ', 'T') + 'Z';
-      }
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return 'N/A';
-      return format(date, formatStr);
-    } catch {
-      return 'N/A';
-    }
-  };
 
   const getTransactionIcon = (type) => {
     const upperType = (type || '').toUpperCase();

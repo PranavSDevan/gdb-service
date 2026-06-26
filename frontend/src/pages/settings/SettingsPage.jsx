@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { settingsService } from '../../services/settingsService';
 import { useThemeStore } from '../../store/themeStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import {
   Settings,
   Bell,
@@ -84,6 +85,8 @@ const SettingsPage = () => {
           setGeneralSettings(prev => ({
             ...prev,
             language: data.language || 'en',
+            dateFormat: data.dateFormat || 'DD/MM/YYYY',
+            currency: data.currency || 'INR',
           }));
           setNotificationSettings(prev => ({
             ...prev,
@@ -128,12 +131,21 @@ const SettingsPage = () => {
         smsNotifications: notificationSettings.smsAlerts,
         twoFactorAuthEnabled: securitySettings.twoFactorEnabled,
         compactMode: appearance.compactMode,
-        sidebarCollapsed: appearance.sidebarCollapsed
+        sidebarCollapsed: appearance.sidebarCollapsed,
+        dateFormat: generalSettings.dateFormat,
+        currency: generalSettings.currency
       };
       await settingsService.updateSettings(user.id, payload);
       setTheme(appearance.theme);
       setCompactMode(appearance.compactMode);
       setSidebarCollapsed(appearance.sidebarCollapsed);
+      
+      // Update global settings store
+      const settingsStore = useSettingsStore.getState();
+      settingsStore.setLanguage(generalSettings.language);
+      settingsStore.setDateFormat(generalSettings.dateFormat);
+      settingsStore.setCurrency(generalSettings.currency);
+      
       toast.success('Settings saved successfully!');
     } catch (error) {
       toast.error(error.message || 'Failed to save settings');
@@ -141,6 +153,7 @@ const SettingsPage = () => {
       setLoading(false);
     }
   };
+
 
   const handlePasswordChange = async () => {
     const errors = {};

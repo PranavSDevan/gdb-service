@@ -21,14 +21,6 @@ const CreditCardDetails = () => {
     return clean.replace(/(.{4})/g, '$1 ').trim();
   };
 
-  const formatCardNumber = (num) => {
-    if (!num) return '';
-    const clean = num.replace(/\s+/g, '');
-    if (clean.startsWith('*')) {
-      return `**** **** **** ${clean.slice(-4)}`;
-    }
-    return clean.replace(/(.{4})/g, '$1 ').trim();
-  };
 
   useEffect(() => {
     loadCards();

@@ -12,4 +12,7 @@ public class SettingsDto {
     private boolean twoFactorAuthEnabled;
     private boolean compactMode;
     private boolean sidebarCollapsed;
+    private String dateFormat;
+    private String currency;
 }
+

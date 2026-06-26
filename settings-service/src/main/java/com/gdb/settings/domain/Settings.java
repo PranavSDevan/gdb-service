@@ -30,4 +30,11 @@ public class Settings {
 
     @Column(name = "sidebar_collapsed")
     private Boolean sidebarCollapsed = false;
+
+    @Column(name = "date_format")
+    private String dateFormat = "DD/MM/YYYY";
+
+    @Column(name = "currency")
+    private String currency = "INR";
 }
+

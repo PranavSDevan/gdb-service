@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { useThemeStore } from '../store/themeStore';
+import { useSettingsStore } from '../store/settingsStore';
 import AiAssistantWidget from '../components/AiAssistantWidget';
 import {
   Building2,
@@ -47,6 +48,26 @@ const DashboardLayout = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
   const { user, logout, hasRole } = useAuthStore();
+  const fetchAndApplySettings = useSettingsStore((state) => state.fetchAndApplySettings);
+  const t = useSettingsStore((state) => state.t);
+
+  useEffect(() => {
+    if (user && user.id) {
+      fetchAndApplySettings(user.id);
+    }
+  }, [user, fetchAndApplySettings]);
+
+  const translateKey = (name) => {
+    if (!name) return '';
+    // Normalize to camelCase
+    const camelCased = name
+      .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
+        return index === 0 ? word.toLowerCase() : word.toUpperCase();
+      })
+      .replace(/\s+/g, '');
+    return t(camelCased);
+  };
+
   const { 
     notifications, 
     unreadCount, 
@@ -241,7 +262,7 @@ const DashboardLayout = () => {
                 }
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span>{item.name}</span>}
+                {sidebarOpen && <span>{translateKey(item.name)}</span>}
               </NavLink>
               
               {/* Sub Items */}
@@ -262,7 +283,7 @@ const DashboardLayout = () => {
                     >
                       <div className="flex items-center gap-2">
                         {subItem.icon && <subItem.icon className="w-4 h-4" />}
-                        {subItem.name}
+                        {translateKey(subItem.name)}
                       </div>
                     </NavLink>
                   ))}
@@ -279,7 +300,8 @@ const DashboardLayout = () => {
             className="hidden lg:flex items-center justify-center w-full py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <Menu className="w-5 h-5" />
-            {sidebarOpen && <span className="ml-2 text-sm">Collapse</span>}
+            {sidebarOpen && <span className="ml-2 text-sm">{translateKey('Collapse') || 'Collapse'}</span>}
+
           </button>
         </div>
       </aside>
@@ -462,14 +484,14 @@ const DashboardLayout = () => {
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                       >
                         <UserCircle className="w-4 h-4" />
-                        My Profile
+                        {translateKey('My Profile')}
                       </button>
                       <button
                         onClick={() => { navigate('/settings'); setUserMenuOpen(false); }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                       >
                         <Settings className="w-4 h-4" />
-                        Settings
+                        {translateKey('Settings')}
                       </button>
                     </div>
                     <div className="py-1 border-t border-gray-200">
@@ -478,9 +500,10 @@ const DashboardLayout = () => {
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
                         <LogOut className="w-4 h-4" />
-                        Sign Out
+                        {translateKey('Sign Out')}
                       </button>
                     </div>
+
                   </div>
                 )}
               </div>

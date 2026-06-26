@@ -39,6 +39,8 @@ public class SettingsServiceImpl implements SettingsService {
         settings.setTwoFactorAuthEnabled(settingsDto.isTwoFactorAuthEnabled());
         settings.setCompactMode(settingsDto.isCompactMode());
         settings.setSidebarCollapsed(settingsDto.isSidebarCollapsed());
+        settings.setDateFormat(settingsDto.getDateFormat());
+        settings.setCurrency(settingsDto.getCurrency());
         Settings saved = settingsRepository.save(settings);
         return convertToDto(saved);
     }
@@ -53,6 +55,9 @@ public class SettingsServiceImpl implements SettingsService {
         dto.setTwoFactorAuthEnabled(settings.isTwoFactorAuthEnabled());
         dto.setCompactMode(settings.getCompactMode() != null && settings.getCompactMode());
         dto.setSidebarCollapsed(settings.getSidebarCollapsed() != null && settings.getSidebarCollapsed());
+        dto.setDateFormat(settings.getDateFormat() != null ? settings.getDateFormat() : "DD/MM/YYYY");
+        dto.setCurrency(settings.getCurrency() != null ? settings.getCurrency() : "INR");
         return dto;
     }
+
 }

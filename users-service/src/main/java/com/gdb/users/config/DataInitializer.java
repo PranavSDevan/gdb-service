@@ -73,12 +73,35 @@ public class DataInitializer implements CommandLineRunner {
             String loginId = (String) user.get("login_id");
             String kycNumber = (String) user.get("kyc_number");
 
-            // Generate unique KYC number if not in database
-            if (kycNumber == null || kycNumber.isBlank()) {
+            // Assign predefined KYC numbers for standard users to align with accounts seed data
+            String predefinedKyc = null;
+            if ("admin".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "456789012345";
+            } else if ("john.doe".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "123456789012";
+            } else if ("teller".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "123456789013";
+            } else if ("teller1".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "234567890123";
+            } else if ("teller2".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "345678901234";
+            } else if ("manager1".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "567890123456";
+            } else if ("manager2".equalsIgnoreCase(loginId)) {
+                predefinedKyc = "678901234567";
+            }
+
+            if (predefinedKyc != null) {
+                if (!predefinedKyc.equals(kycNumber)) {
+                    jdbcTemplate.update("UPDATE users SET kyc_number = ? WHERE user_id = ?", predefinedKyc, user.get("user_id"));
+                    log.info("Assigned predefined KYC number {} to user '{}'", predefinedKyc, loginId);
+                }
+            } else if (kycNumber == null || kycNumber.isBlank()) {
                 String newKyc = generateRandomKycNumber();
                 jdbcTemplate.update("UPDATE users SET kyc_number = ? WHERE user_id = ?", newKyc, user.get("user_id"));
                 log.info("Generated new KYC number {} for user '{}'", newKyc, loginId);
             }
+
 
             boolean needsReset = false;
 

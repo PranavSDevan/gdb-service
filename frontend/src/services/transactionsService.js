@@ -7,6 +7,25 @@
 
 import { transactionsApi } from './apiConfig';
 
+const normalizeTransaction = (txn) => {
+  if (!txn) return null;
+  return {
+    ...txn,
+    id: txn.id,
+    transaction_id: txn.transactionId || txn.referenceId || txn.id,
+    transaction_type: txn.transactionType || txn.transaction_type,
+    account_number: txn.accountNumber || txn.account_number,
+    from_account: txn.fromAccount || txn.from_account,
+    to_account: txn.toAccount || txn.to_account,
+    amount: txn.amount,
+    transfer_mode: txn.mode || txn.transfer_mode,
+    description: txn.description,
+    status: txn.status || 'COMPLETED',
+    created_at: txn.createdAt || txn.created_at,
+    reference_id: txn.referenceId || txn.reference_id,
+  };
+};
+
 export const transactionsService = {
   /**
    * Get all transactions
@@ -31,6 +50,9 @@ export const transactionsService = {
       const response = await transactionsApi.get(url);
       console.log('Transactions response:', response.data);
       // Backend returns { logs: [], total: X, skip, limit, has_more }
+      if (response.data && response.data.logs) {
+        response.data.logs = response.data.logs.map(normalizeTransaction);
+      }
       return response.data;
     } catch (error) {
       console.error('Fetch transactions error:', error.response?.data);
@@ -56,6 +78,9 @@ export const transactionsService = {
       const url = `/api/v1/transactions/account/${accountNumber}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const response = await transactionsApi.get(url);
       // Backend returns { account_number, logs: [], total_count, skip, limit, has_more }
+      if (response.data && response.data.logs) {
+        response.data.logs = response.data.logs.map(normalizeTransaction);
+      }
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.detail?.message || error.response?.data?.message || 'Failed to fetch transactions');
@@ -70,7 +95,7 @@ export const transactionsService = {
     try {
       // Fetch all transactions to calculate stats
       const response = await transactionsApi.get('/api/v1/transaction-logs?limit=1000');
-      const logs = response.data?.logs || [];
+      const logs = (response.data?.logs || []).map(normalizeTransaction);
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -93,6 +118,7 @@ export const transactionsService = {
         transferCount: transfers.length,
       };
     } catch (error) {
+
       console.error('Failed to fetch transaction stats:', error);
       return {
         totalTransactions: 0,

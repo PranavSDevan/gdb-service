@@ -9,19 +9,20 @@ import axios from 'axios';
 
 // API Base URLs from Environment Variables
 export const API_BASE_URLS = {
-  aadhar: import.meta.env.VITE_AADHAR_SERVICE_URL,
-  company: import.meta.env.VITE_COMPANY_CRV_SERVICE_URL,
-  auth: import.meta.env.VITE_AUTH_SERVICE_URL,
-  users: import.meta.env.VITE_USERS_SERVICE_URL,
-  accounts: import.meta.env.VITE_ACCOUNTS_SERVICE_URL,
-  transactions: import.meta.env.VITE_TRANSACTIONS_SERVICE_URL,
-  notification: import.meta.env.VITE_NOTIFICATION_SERVICE_URL,
-  paymentGateway: import.meta.env.VITE_PAYMENT_GATEWAY_URL,
+  aadhar: import.meta.env.VITE_AADHAR_SERVICE_URL || 'http://localhost:8005',
+  company: import.meta.env.VITE_COMPANY_CRV_SERVICE_URL || 'http://localhost:8006',
+  auth: import.meta.env.VITE_AUTH_SERVICE_URL || 'http://localhost:8004',
+  users: import.meta.env.VITE_USERS_SERVICE_URL || 'http://localhost:8003',
+  accounts: import.meta.env.VITE_ACCOUNTS_SERVICE_URL || 'http://localhost:8001',
+  transactions: import.meta.env.VITE_TRANSACTIONS_SERVICE_URL || 'http://localhost:8002',
+  notification: import.meta.env.VITE_NOTIFICATION_SERVICE_URL || 'http://localhost:8007',
+  paymentGateway: import.meta.env.VITE_PAYMENT_GATEWAY_URL || 'http://localhost:8008',
   creditCards: import.meta.env.VITE_CREDIT_CARDS_SERVICE_URL || 'http://localhost:8010',
   statements: import.meta.env.VITE_STATEMENTS_SERVICE_URL || 'http://localhost:8011',
   settings: import.meta.env.VITE_SETTINGS_SERVICE_URL || 'http://localhost:8012',
   ai: import.meta.env.VITE_AI_SERVICE_URL || 'http://localhost:8016',
 };
+
 
 // Create axios instances for each service
 export const aadharApi = axios.create({

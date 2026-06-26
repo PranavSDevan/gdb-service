@@ -231,3 +231,97 @@ body {
 .compact .page-title {
   font-size: 1.25rem !important;
 }
+
+/* Dark Mode Global Overrides */
+.dark body {
+  background-color: #0b1329 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .card, 
+.dark .bg-white,
+.dark [class*="bg-white"] {
+  background-color: #162035 !important;
+  border-color: #24304f !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-900, 
+.dark .text-gray-800, 
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-black,
+.dark .page-title,
+.dark .font-bold {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-700, 
+.dark .text-gray-600, 
+.dark .text-gray-500,
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .bg-gray-50, 
+.dark .bg-slate-50,
+.dark .bg-gray-100 {
+  background-color: #1e294b !important;
+}
+
+.dark input, 
+.dark select, 
+.dark textarea,
+.dark .input {
+  background-color: #101726 !important;
+  border-color: #24304f !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .border-gray-200, 
+.dark .border-gray-100, 
+.dark .border-slate-200,
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #24304f !important;
+}
+
+.dark .sidebar-link {
+  color: #94a3b8 !important;
+}
+
+.dark .sidebar-link:hover {
+  background-color: rgba(37, 99, 235, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+.dark .sidebar-link-active {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+.dark .bg-blue-50, 
+.dark .bg-primary-50,
+.dark .bg-primary-100 {
+  background-color: #1e294b !important;
+  color: #60a5fa !important;
+}
+
+.dark header, 
+.dark .bg-white.border-b,
+.dark header .bg-white {
+  background-color: #0f172a !important;
+  border-color: #24304f !important;
+}
+
+.dark .bg-white.border-t,
+.dark footer {
+  background-color: #0f172a !important;
+  border-color: #24304f !important;
+}
+
+.dark .absolute.bottom-0.left-0.right-0.p-4.border-t {
+  background-color: #162035 !important;
+  border-color: #24304f !important;
+}
+
