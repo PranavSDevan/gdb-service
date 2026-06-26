@@ -43,5 +43,9 @@
         <module>payment-gateway-service</module>
         <module>transactions-service</module>
         <module>users-service</module>
+        <module>credit-cards-service</module>
+        <module>bank-statements-service</module>
+        <module>settings-service</module>
+        <module>ai-service</module>
     </modules>
 </project>

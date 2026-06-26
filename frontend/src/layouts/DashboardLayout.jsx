@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
+import AiAssistantWidget from '../components/AiAssistantWidget';
 import {
   Building2,
   LayoutDashboard,
@@ -29,6 +30,8 @@ import {
   ArrowRightLeft,
   Shield,
   Info,
+  Receipt,
+  FileText,
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -145,6 +148,24 @@ const DashboardLayout = () => {
         path: '/reports',
         icon: BarChart3,
         roles: ['ADMIN', 'MANAGER'],
+      },
+      {
+        name: 'Credit Cards',
+        path: '/credit-cards',
+        icon: CreditCard,
+        roles: ['ADMIN', 'TELLER', 'MANAGER'],
+        subItems: [
+          { name: 'Dashboard', path: '/credit-cards', icon: LayoutDashboard },
+          { name: 'Card Details', path: '/credit-cards/details', icon: CreditCard },
+          { name: 'Transactions', path: '/credit-cards/transactions', icon: FileText },
+          { name: 'Pay Bill', path: '/credit-cards/pay', icon: Receipt },
+        ]
+      },
+      {
+        name: 'Bank Statements',
+        path: '/statements',
+        icon: FileText,
+        roles: ['ADMIN', 'TELLER', 'MANAGER', 'CUSTOMER'],
       },
       {
         name: 'Settings',
@@ -477,6 +498,9 @@ const DashboardLayout = () => {
           onClick={() => { setUserMenuOpen(false); setNotificationsOpen(false); }}
         />
       )}
+
+      {/* Global Floating AI Copilot Assistant */}
+      <AiAssistantWidget />
     </div>
   );
 };

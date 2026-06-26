@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { settingsService } from '../../services/settingsService';
 import {
   Settings,
   Bell,
@@ -68,13 +69,56 @@ const SettingsPage = () => {
     compactMode: false,
   });
 
+  // Load settings on mount
+  useEffect(() => {
+    if (!user || !user.id) return;
+    
+    const loadSettings = async () => {
+      try {
+        const data = await settingsService.getSettings(user.id);
+        if (data) {
+          setGeneralSettings(prev => ({
+            ...prev,
+            language: data.language || 'en',
+          }));
+          setNotificationSettings(prev => ({
+            ...prev,
+            emailNotifications: data.emailNotifications !== undefined ? data.emailNotifications : true,
+            smsAlerts: data.smsNotifications !== undefined ? data.smsNotifications : false,
+          }));
+          setSecuritySettings(prev => ({
+            ...prev,
+            twoFactorEnabled: data.twoFactorAuthEnabled !== undefined ? data.twoFactorAuthEnabled : false,
+          }));
+          setAppearance(prev => ({
+            ...prev,
+            theme: (data.theme || 'LIGHT').toLowerCase(),
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading settings from backend", err);
+      }
+    };
+    
+    loadSettings();
+  }, [user]);
+
   const handleSaveSettings = async () => {
+    if (!user || !user.id) return;
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        userId: user.id,
+        theme: appearance.theme.toUpperCase(),
+        language: generalSettings.language,
+        emailNotifications: notificationSettings.emailNotifications,
+        smsNotifications: notificationSettings.smsAlerts,
+        twoFactorAuthEnabled: securitySettings.twoFactorEnabled
+      };
+      await settingsService.updateSettings(user.id, payload);
       toast.success('Settings saved successfully!');
     } catch (error) {
-      toast.error('Failed to save settings');
+      toast.error(error.message || 'Failed to save settings');
     } finally {
       setLoading(false);
     }

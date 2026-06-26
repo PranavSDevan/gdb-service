@@ -67,6 +67,26 @@ spring:
           predicates:
             - Path=/api/v1/payment/**
 
+        - id: credit-cards-service-route
+          uri: ${CREDIT_CARDS_SERVICE_URL:http://localhost:8010}
+          predicates:
+            - Path=/api/v1/credit-cards/**
+
+        - id: bank-statements-service-route
+          uri: ${STATEMENTS_SERVICE_URL:http://localhost:8011}
+          predicates:
+            - Path=/api/v1/statements/**
+
+        - id: settings-service-route
+          uri: ${SETTINGS_SERVICE_URL:http://localhost:8012}
+          predicates:
+            - Path=/api/v1/settings/**
+
+        - id: ai-service-route
+          uri: ${AI_SERVICE_URL:http://localhost:8016}
+          predicates:
+            - Path=/api/v1/ai/**
+
 # Eureka Client Configuration
 eureka:
   client:

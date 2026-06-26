@@ -9,6 +9,7 @@ volumes:
   users-db-data:
   accounts-db-data:
   transactions-db-data:
+  credit-cards-db-data:
 
 services:
 
@@ -73,6 +74,23 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - transactions-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  credit-cards-db:
+    image: postgres:15-alpine
+    container_name: credit-cards-db
+    environment:
+      POSTGRES_DB: gdb_credit_cards_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - credit-cards-db-data:/var/lib/postgresql/data
     networks:
       - gdb-network
     healthcheck:
@@ -274,8 +292,105 @@ services:
       AADHAR_SERVICE_URL: http://aadhar-service:8005
       COMPANY_SERVICE_URL: http://company-service:8006
       PAYMENT_SERVICE_URL: http://payment-gateway-service:8008
+      CREDIT_CARDS_SERVICE_URL: http://credit-cards-service:8010
+      STATEMENTS_SERVICE_URL: http://bank-statements-service:8011
+      SETTINGS_SERVICE_URL: http://settings-service:8012
+      AI_SERVICE_URL: http://ai-service:8016
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gdb-network
+    restart: on-failure
+
+  credit-cards-service:
+    build:
+      context: .
+      dockerfile: credit-cards-service/Dockerfile
+    image: gdb/credit-cards-service:latest
+    container_name: credit-cards-service
+    ports:
+      - "8010:8010"
+    environment:
+      DATABASE_URL: jdbc:postgresql://credit-cards-db:5432/gdb_credit_cards_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      credit-cards-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gdb-network
+    restart: on-failure
+
+  bank-statements-service:
+    build:
+      context: .
+      dockerfile: bank-statements-service/Dockerfile
+    image: gdb/bank-statements-service:latest
+    container_name: bank-statements-service
+    ports:
+      - "8011:8011"
+    environment:
+      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gdb-network
+    restart: on-failure
+
+  settings-service:
+    build:
+      context: .
+      dockerfile: settings-service/Dockerfile
+    image: gdb/settings-service:latest
+    container_name: settings-service
+    ports:
+      - "8012:8012"
+    environment:
+      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gdb-network
+    restart: on-failure
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    image: gdb/ai-service:latest
+    container_name: ai-service
+    ports:
+      - "8016:8016"
+    environment:
+      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_PROFILES_ACTIVE: dev
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      accounts-db:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
     networks:

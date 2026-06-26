@@ -39,6 +39,18 @@ import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 
+// Additional Features: Credit Card Management
+import CreditCardDashboard from './Additional Features/Credit Card Management/pages/CreditCardDashboard';
+import ApplyCreditCard from './Additional Features/Credit Card Management/pages/ApplyCreditCard';
+import CreditCardDetails from './Additional Features/Credit Card Management/pages/CreditCardDetails';
+import CreditCardTransactions from './Additional Features/Credit Card Management/pages/CreditCardTransactions';
+import PayCreditCardBill from './Additional Features/Credit Card Management/pages/PayCreditCardBill';
+import PaymentSuccess from './Additional Features/Credit Card Management/pages/PaymentSuccess';
+import ApplicationSuccess from './Additional Features/Credit Card Management/pages/ApplicationSuccess';
+
+// Additional Features: Bank Statement Management
+import StatementPreview from './Additional Features/Bank Statement Management/pages/StatementPreview';
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user, checkTokenExpiry } = useAuthStore();
@@ -226,6 +238,18 @@ function App() {
           {/* Settings */}
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+
+          {/* Credit Cards (Additional Feature) */}
+          <Route path="/credit-cards" element={<CreditCardDashboard />} />
+          <Route path="/credit-cards/apply" element={<ApplyCreditCard />} />
+          <Route path="/credit-cards/details" element={<CreditCardDetails />} />
+          <Route path="/credit-cards/transactions" element={<CreditCardTransactions />} />
+          <Route path="/credit-cards/pay" element={<PayCreditCardBill />} />
+          <Route path="/credit-cards/payment-success" element={<PaymentSuccess />} />
+          <Route path="/credit-cards/application-success" element={<ApplicationSuccess />} />
+
+          {/* Bank Statements (Additional Feature) */}
+          <Route path="/statements" element={<StatementPreview />} />
         </Route>
 
         {/* Redirect root to login (PublicRoute will redirect to dashboard if authenticated) */}
