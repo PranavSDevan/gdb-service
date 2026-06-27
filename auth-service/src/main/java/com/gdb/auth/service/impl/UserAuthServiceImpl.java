@@ -73,6 +73,7 @@ public class UserAuthServiceImpl implements AuthService {
                         .userId(verification.getUserId())
                         .loginId(request.getLoginId())
                         .role(verification.getRole())
+                        .username(verification.getUsername())
                         .build())
                 .build();
     }
@@ -122,6 +123,7 @@ public class UserAuthServiceImpl implements AuthService {
                         .userId(status.getUserId())
                         .loginId(loginId)
                         .role(status.getRole())
+                        .username(status.getUsername())
                         .build())
                 .build();
     }

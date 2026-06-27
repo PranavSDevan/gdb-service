@@ -10,4 +10,6 @@ public class SettingsDto {
     private boolean emailNotifications;
     private boolean smsNotifications;
     private boolean twoFactorAuthEnabled;
+    private boolean compactMode;
+    private boolean sidebarCollapsed;
 }

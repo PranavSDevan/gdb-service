@@ -26,4 +26,7 @@ public class TransactionLogResponse {
     private TransactionType transactionType;
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
+    private String description;
+    private String mode;
+    private String status;
 }

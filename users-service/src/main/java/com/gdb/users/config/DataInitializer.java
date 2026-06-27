@@ -64,13 +64,21 @@ public class DataInitializer implements CommandLineRunner {
      */
     private void fixAllPasswords() {
         var users = jdbcTemplate.queryForList(
-                "SELECT user_id, login_id, password FROM users");
+                "SELECT user_id, login_id, password, kyc_number FROM users");
 
         String validHash = BCrypt.hashpw(DEFAULT_PASSWORD, BCrypt.gensalt(UserConstants.BCRYPT_SALT_ROUNDS));
 
         for (var user : users) {
             String password = (String) user.get("password");
             String loginId = (String) user.get("login_id");
+            String kycNumber = (String) user.get("kyc_number");
+
+            // Generate unique KYC number if not in database
+            if (kycNumber == null || kycNumber.isBlank()) {
+                String newKyc = generateRandomKycNumber();
+                jdbcTemplate.update("UPDATE users SET kyc_number = ? WHERE user_id = ?", newKyc, user.get("user_id"));
+                log.info("Generated new KYC number {} for user '{}'", newKyc, loginId);
+            }
 
             boolean needsReset = false;
 
@@ -95,5 +103,14 @@ public class DataInitializer implements CommandLineRunner {
                 log.info("Password for user '{}' has been reset to default.", loginId);
             }
         }
+    }
+
+    private String generateRandomKycNumber() {
+        java.util.Random random = new java.util.Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            sb.append(random.nextInt(10));
+        }
+        return sb.toString();
     }
 }

@@ -19,9 +19,12 @@ import {
   UserCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import { usersService } from '../../services/usersService';
 
 const CreateSavingsAccount = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { createSavingsAccount, verifyAadhar: verifyAadharAPI, isLoading } = useAccountStore();
   const { notifyAccountCreated } = useNotificationStore();
 
@@ -82,6 +85,38 @@ const CreateSavingsAccount = () => {
     setErrors({});
 
     try {
+      // 1. Fetch user by KYC from system database first
+      let gdbUser;
+      try {
+        gdbUser = await usersService.getByKyc(formData.aadhar_number);
+      } catch (err) {
+        const errorMsg = 'No user found in the GDB database with the provided KYC number. Please request Admin/Manager to create the user profile first.';
+        toast.error(errorMsg);
+        setErrors({ aadhar_number: errorMsg });
+        setVerifyingAadhar(false);
+        return;
+      }
+
+      if (!gdbUser) {
+        const errorMsg = 'No user found in the GDB database with the provided KYC number.';
+        toast.error(errorMsg);
+        setErrors({ aadhar_number: errorMsg });
+        setVerifyingAadhar(false);
+        return;
+      }
+
+      // 2. Teller restriction check
+      if (user && user.role === 'TELLER') {
+        if (user.username.toLowerCase() !== gdbUser.username.toLowerCase()) {
+          const errorMsg = `Access Denied: Tellers can only create accounts using their own KYC number (${user.username}). This KYC belongs to ${gdbUser.username}.`;
+          toast.error(errorMsg);
+          setErrors({ aadhar_number: errorMsg });
+          setVerifyingAadhar(false);
+          return;
+        }
+      }
+
+      // 3. Verify Aadhar with external service
       const data = await verifyAadharAPI(formData.aadhar_number);
       
       if (data && data.is_valid) {
@@ -90,14 +125,14 @@ const CreateSavingsAccount = () => {
         
         setFormData(prev => ({
           ...prev,
-          name: data.name || '',
+          name: gdbUser.username || data.name || '',
           date_of_birth: data.date_of_birth || '',
           gender: data.gender || '',
           phone_no: data.mobile_no || data.phone_no || '',
           address: data.address || '',
         }));
         
-        toast.success(`Aadhar verified for ${data.name}!`);
+        toast.success(`KYC verified for ${gdbUser.username}!`);
       } else {
         const errorMsg = data?.message || 'Aadhar not found in UIDAI database';
         toast.error(errorMsg);

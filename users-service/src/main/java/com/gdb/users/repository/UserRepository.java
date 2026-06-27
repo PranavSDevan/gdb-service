@@ -14,6 +14,8 @@ public interface UserRepository {
 
     Optional<User> findByLoginId(String loginId);
 
+    Optional<User> findByKycNumber(String kycNumber);
+
     List<User> findAll(String role, Boolean isActive);
 
     boolean existsByLoginId(String loginId);

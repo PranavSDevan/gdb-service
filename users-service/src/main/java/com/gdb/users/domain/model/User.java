@@ -18,6 +18,7 @@ public class User {
     private String password;
     private String role;
     private Boolean isActive;
+    private String kycNumber;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

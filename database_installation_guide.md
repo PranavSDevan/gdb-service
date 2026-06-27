@@ -39,8 +39,15 @@ pgAdmin 4 is the graphical user interface used to manage PostgreSQL databases. I
 
 1. Expand your newly registered server in the left sidebar.
 2. Right-click on **Databases** ➔ **Create** ➔ **Database...**
-3. Enter the database name required by the project (e.g., `[Project Name]_db` or `gdb_users_db`).
-4. Click **Save**.
+3. Enter the database name required by the project. The microservices architecture expects the following isolated databases:
+   - `gdb_users_db` (Users Service)
+   - `gdb_auth_db` (Authentication Service)
+   - `gdb_accounts_db` (Account Service)
+   - `gdb_transactions_db` (Transactions Service)
+   - `gdb_credit_cards_db` (Credit Cards Service)
+   - `gdb_settings_db` (Settings Service)
+   - `gdb_bank_statements_db` (Bank Statements Service)
+4. Click **Save** for each database.
 
 ---
 

@@ -91,6 +91,20 @@ export const usersService = {
       throw new Error(error.response?.data?.detail || 'Failed to deactivate user');
     }
   },
+
+  /**
+   * Get user by KYC number
+   * @param {string} kycNumber - 12-digit KYC number
+   * @returns {Promise<Object>} User details
+   */
+  getByKyc: async (kycNumber) => {
+    try {
+      const response = await usersApi.get(`/api/v1/users/kyc/${kycNumber}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.response?.data?.detail || 'User not found in system database');
+    }
+  },
 };
 
 export default usersService;

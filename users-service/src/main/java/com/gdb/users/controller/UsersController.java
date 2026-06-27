@@ -42,6 +42,14 @@ public class UsersController {
         return ResponseEntity.ok(UserMapper.toResponse(user));
     }
 
+    @GetMapping("/api/v1/users/kyc/{kycNumber}")
+    public ResponseEntity<UserResponse> getUserByKycPublic(@PathVariable String kycNumber) {
+        SecurityUtils.checkAnyAuthorizedRole();
+        log.info("Received request to fetch user by KYC: {}", kycNumber);
+        User user = userService.getUserByKycNumber(kycNumber);
+        return ResponseEntity.ok(UserMapper.toResponse(user));
+    }
+
     @GetMapping("/api/v1/users")
     public ResponseEntity<List<UserResponse>> listUsers(
             @RequestParam(required = false) String role,
@@ -98,6 +106,13 @@ public class UsersController {
     public ResponseEntity<UserResponse> getUserStatus(@PathVariable String loginId) {
         log.info("Received internal request for user status: {}", loginId);
         User user = userService.getUserByLoginId(loginId);
+        return ResponseEntity.ok(UserMapper.toResponse(user));
+    }
+
+    @GetMapping("/internal/v1/users/kyc/{kycNumber}")
+    public ResponseEntity<UserResponse> getUserByKyc(@PathVariable String kycNumber) {
+        log.info("Received internal request to fetch user by KYC: {}", kycNumber);
+        User user = userService.getUserByKycNumber(kycNumber);
         return ResponseEntity.ok(UserMapper.toResponse(user));
     }
 }

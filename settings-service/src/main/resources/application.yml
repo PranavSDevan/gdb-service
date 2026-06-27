@@ -11,7 +11,7 @@ spring:
     banner-mode: off
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/gdb_accounts_db}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/gdb_settings_db}
     username: ${DATABASE_USER:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver

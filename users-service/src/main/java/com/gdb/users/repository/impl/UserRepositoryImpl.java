@@ -24,7 +24,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User save(User user) {
-        String sql = "INSERT INTO users (username, login_id, password, role, is_active) VALUES (?, ?, ?, ?, ?) RETURNING *";
+        String sql = "INSERT INTO users (username, login_id, password, role, is_active, kyc_number) VALUES (?, ?, ?, ?, ?, ?) RETURNING *";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -35,6 +35,7 @@ public class UserRepositoryImpl implements UserRepository {
             ps.setString(3, user.getPassword());
             ps.setString(4, user.getRole());
             ps.setBoolean(5, user.getIsActive() != null ? user.getIsActive() : true);
+            ps.setString(6, user.getKycNumber());
             return ps;
         }, keyHolder);
 
@@ -76,6 +77,10 @@ public class UserRepositoryImpl implements UserRepository {
             sql.append(", role = ?");
             params.add(user.getRole());
         }
+        if (user.getKycNumber() != null) {
+            sql.append(", kyc_number = ?");
+            params.add(user.getKycNumber());
+        }
 
         sql.append(" WHERE login_id = ?");
         params.add(user.getLoginId());
@@ -94,6 +99,13 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByLoginId(String loginId) {
         String sql = "SELECT * FROM users WHERE login_id = ?";
         List<User> users = jdbcTemplate.query(sql, userRowMapper, loginId);
+        return users.stream().findFirst();
+    }
+
+    @Override
+    public Optional<User> findByKycNumber(String kycNumber) {
+        String sql = "SELECT * FROM users WHERE kyc_number = ?";
+        List<User> users = jdbcTemplate.query(sql, userRowMapper, kycNumber);
         return users.stream().findFirst();
     }
 

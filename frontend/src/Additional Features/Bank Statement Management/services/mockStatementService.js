@@ -58,7 +58,13 @@ export const statementService = {
     if (USE_REAL_API) {
       try {
         const response = await accountsApi.get('/api/v1/accounts');
-        return response.data;
+        return response.data.map(acc => ({
+          id: (acc.account_number || acc.accountNumber || '').toString(),
+          accountNumber: acc.account_number || acc.accountNumber,
+          accountName: acc.name,
+          type: acc.account_type || acc.accountType,
+          balance: acc.balance
+        }));
       } catch (error) {
         console.warn("Failed fetching accounts from backend, falling back to mock:", error);
       }
@@ -73,8 +79,8 @@ export const statementService = {
         // Retrieve account details to find the account number
         const accsResponse = await accountsApi.get('/api/v1/accounts');
         const accounts = accsResponse.data;
-        const account = accounts.find(a => a.id === accountId || a.accountNumber === accountId);
-        const targetAccountNumber = account ? account.accountNumber : accountId;
+        const account = accounts.find(a => a.id === accountId || a.accountNumber === accountId || a.account_number?.toString() === accountId?.toString());
+        const targetAccountNumber = account ? (account.account_number || account.accountNumber) : accountId;
 
         const payload = {
           accountId: targetAccountNumber,

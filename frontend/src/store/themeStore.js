@@ -31,16 +31,41 @@ const applyTheme = (theme) => {
   root.setAttribute('data-theme', effectiveTheme);
 };
 
+// Apply compact mode to document
+const applyCompactMode = (compactMode) => {
+  const root = document.documentElement;
+  if (compactMode) {
+    root.classList.add('compact');
+    root.setAttribute('data-compact', 'true');
+  } else {
+    root.classList.remove('compact');
+    root.removeAttribute('data-compact');
+  }
+};
+
 export const useThemeStore = create(
   persist(
     (set, get) => ({
       // Theme can be 'light', 'dark', or 'system'
       theme: 'light',
+      compactMode: false,
+      sidebarCollapsed: false,
       
       // Set theme
       setTheme: (theme) => {
         set({ theme });
         applyTheme(theme);
+      },
+
+      // Set compact mode
+      setCompactMode: (compactMode) => {
+        set({ compactMode });
+        applyCompactMode(compactMode);
+      },
+
+      // Set sidebar collapsed
+      setSidebarCollapsed: (sidebarCollapsed) => {
+        set({ sidebarCollapsed });
       },
       
       // Get effective theme (resolves 'system' to actual theme)
@@ -51,8 +76,9 @@ export const useThemeStore = create(
       
       // Initialize theme on app load
       initializeTheme: () => {
-        const { theme } = get();
+        const { theme, compactMode } = get();
         applyTheme(theme);
+        applyCompactMode(compactMode);
         
         // Listen for system theme changes
         if (typeof window !== 'undefined' && window.matchMedia) {
@@ -66,7 +92,7 @@ export const useThemeStore = create(
           
           // Modern browsers
           if (mediaQuery.addEventListener) {
-            mediaQuery.addEventListener('change', handleChange);
+            mediaQuery.addEventListener('change', mediaQuery.matches ? handleChange : handleChange);
           } else {
             // Fallback for older browsers
             mediaQuery.addListener(handleChange);
@@ -76,7 +102,11 @@ export const useThemeStore = create(
     }),
     {
       name: 'gdb-theme-storage',
-      partialize: (state) => ({ theme: state.theme }),
+      partialize: (state) => ({ 
+        theme: state.theme,
+        compactMode: state.compactMode,
+        sidebarCollapsed: state.sidebarCollapsed
+      }),
     }
   )
 );

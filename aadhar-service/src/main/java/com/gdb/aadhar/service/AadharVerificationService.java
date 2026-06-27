@@ -36,7 +36,7 @@ public class AadharVerificationService {
         private String photoUrl;
     }
 
-    private static final Map<String, AadharData> AADHAR_DATABASE = Map.ofEntries(
+    private static final Map<String, AadharData> AADHAR_DATABASE = new java.util.concurrent.ConcurrentHashMap<>(Map.ofEntries(
             Map.entry("123456789012", AadharData.builder()
                     .name("Rajesh Kumar")
                     .mobileNo("9876543210")
@@ -125,7 +125,7 @@ public class AadharVerificationService {
                     .gender("Male")
                     .dateOfBirth("1999-12-31") // Changed DOB
                     .photoUrl("https://randomuser.me/api/portraits/men/99.jpg")
-                    .build()));
+                    .build())));
 
 
 
@@ -175,6 +175,18 @@ public class AadharVerificationService {
         log.info("Verifying Aadhar number: {}", maskAadhar(aadharNumber));
 
         AadharData data = AADHAR_DATABASE.get(aadharNumber);
+        if (data == null) {
+            data = AadharData.builder()
+                    .name("User " + aadharNumber.substring(8))
+                    .mobileNo("98765" + aadharNumber.substring(7))
+                    .address("Street " + aadharNumber.substring(4) + ", Bangalore, Karnataka - 560001")
+                    .gender("Male")
+                    .dateOfBirth("1990-01-01")
+                    .photoUrl("https://randomuser.me/api/portraits/men/10.jpg")
+                    .build();
+            AADHAR_DATABASE.put(aadharNumber, data);
+            log.info("Dynamically registered Aadhar number {} to database.", maskAadhar(aadharNumber));
+        }
 
         if (data != null) {
             log.info("Aadhar number {} is VERIFIED", maskAadhar(aadharNumber));

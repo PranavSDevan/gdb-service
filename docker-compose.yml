@@ -10,6 +10,8 @@ volumes:
   accounts-db-data:
   transactions-db-data:
   credit-cards-db-data:
+  settings-db-data:
+  bank-statements-db-data:
 
 services:
 
@@ -91,6 +93,40 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - credit-cards-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  settings-db:
+    image: postgres:15-alpine
+    container_name: settings-db
+    environment:
+      POSTGRES_DB: gdb_settings_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - settings-db-data:/var/lib/postgresql/data
+    networks:
+      - gdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bank-statements-db:
+    image: postgres:15-alpine
+    container_name: bank-statements-db
+    environment:
+      POSTGRES_DB: gdb_bank_statements_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - bank-statements-db-data:/var/lib/postgresql/data
     networks:
       - gdb-network
     healthcheck:
@@ -181,6 +217,7 @@ services:
       DATABASE_PASSWORD: postgres
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       AUTH_SERVICE_URL: http://auth-service:8004
+      USERS_SERVICE_URL: http://users-service:8003
       AADHAR_SERVICE_URL: http://aadhar-service:8005
       COMPANY_SERVICE_URL: http://company-service:8006
       SPRING_PROFILES_ACTIVE: dev
@@ -336,13 +373,14 @@ services:
     ports:
       - "8011:8011"
     environment:
-      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_URL: jdbc:postgresql://bank-statements-db:5432/gdb_bank_statements_db
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
+      TRANSACTIONS_SERVICE_URL: http://transactions-service:8002
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
-      accounts-db:
+      bank-statements-db:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
@@ -359,13 +397,13 @@ services:
     ports:
       - "8012:8012"
     environment:
-      DATABASE_URL: jdbc:postgresql://accounts-db:5432/gdb_accounts_db
+      DATABASE_URL: jdbc:postgresql://settings-db:5432/gdb_settings_db
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_PROFILES_ACTIVE: dev
     depends_on:
-      accounts-db:
+      settings-db:
         condition: service_healthy
       eureka-server:
         condition: service_healthy

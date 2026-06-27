@@ -18,6 +18,7 @@ public class UserMapper {
                 .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .kycNumber(user.getKycNumber())
                 .build();
     }
 

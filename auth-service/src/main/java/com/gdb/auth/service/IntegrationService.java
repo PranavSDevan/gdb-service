@@ -15,10 +15,13 @@ public interface IntegrationService {
     class UserVerificationResponse {
         @JsonProperty("isValid")
         private boolean isValid;
+        @JsonProperty("userId")
         private Long userId;
         private String role;
         @JsonProperty("isActive")
         private boolean isActive;
+        @JsonProperty("username")
+        private String username;
     }
 
     UserVerificationResponse verifyCredentials(String loginId, String password);

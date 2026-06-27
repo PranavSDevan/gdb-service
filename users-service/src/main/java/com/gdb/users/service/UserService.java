@@ -14,6 +14,8 @@ public interface UserService {
 
     User getUserByLoginId(String loginId);
 
+    User getUserByKycNumber(String kycNumber);
+
     List<User> listUsers(String role, Boolean isActive);
 
     void activateUser(String loginId);

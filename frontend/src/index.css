@@ -178,3 +178,56 @@ body {
     display: none !important;
   }
 }
+
+/* Compact Mode Styles */
+.compact, [data-compact="true"] {
+  font-size: 0.875rem;
+}
+
+.compact .p-6, .compact .card, .compact .p-8 {
+  padding: 1rem !important;
+}
+
+.compact .p-4 {
+  padding: 0.5rem !important;
+}
+
+.compact .py-6, .compact .py-8 {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.compact .gap-6 {
+  gap: 0.75rem !important;
+}
+
+.compact .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem !important;
+}
+
+.compact .mb-6 {
+  margin-bottom: 0.75rem !important;
+}
+
+.compact .mt-8 {
+  margin-top: 1rem !important;
+}
+
+.compact .h-16 {
+  height: 3.5rem !important;
+}
+
+.compact input, .compact select, .compact textarea {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  font-size: 0.875rem !important;
+}
+
+.compact button, .compact a {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+}
+
+.compact .page-title {
+  font-size: 1.25rem !important;
+}

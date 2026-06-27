@@ -45,8 +45,16 @@ export const authService = {
    */
   verifyToken: async () => {
     try {
-      const response = await authApi.get('/api/v1/auth/verify');
-      return response.data;
+      const response = await authApi.get('/api/v1/auth/me');
+      // Normalize response: backend returns TokenValidationResponse with isValid / userId / loginId / role
+      const data = response.data;
+      return {
+        valid: data.isValid ?? data.valid ?? false,
+        user_id: data.userId ?? data.user_id,
+        login_id: data.loginId ?? data.login_id,
+        username: data.username,
+        role: data.role,
+      };
     } catch (error) {
       throw new Error('Token verification failed');
     }

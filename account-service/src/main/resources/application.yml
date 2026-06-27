@@ -52,6 +52,7 @@ external:
 app:
   services:
     auth-url: ${AUTH_SERVICE_URL:http://localhost:8004}
+    users-url: ${USERS_SERVICE_URL:http://users-service:8003}
 
 eureka:
   client:

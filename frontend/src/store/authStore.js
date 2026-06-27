@@ -154,15 +154,17 @@ export const useAuthStore = create(
         try {
           const response = await authService.verifyToken();
           if (response.valid) {
-            set({
+            set((state) => ({
               user: {
+                ...state.user,
                 id: response.user_id,
                 user_id: response.user_id,
                 login_id: response.login_id,
+                username: response.username || state.user?.username || response.login_id,
                 role: response.role,
               },
               isAuthenticated: true,
-            });
+            }));
             return true;
           }
         } catch (error) {

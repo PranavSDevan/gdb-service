@@ -80,6 +80,9 @@ public class TransactionLogServiceImpl implements TransactionLogService {
                 .amount(log.getAmount())
                 .transactionType(log.getTransactionType())
                 .createdAt(log.getCreatedAt())
+                .description(log.getDescription())
+                .mode(log.getMode())
+                .status(log.getStatus())
                 .build();
     }
 }

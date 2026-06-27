@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
+import { useThemeStore } from '../store/themeStore';
 import AiAssistantWidget from '../components/AiAssistantWidget';
 import {
   Building2,
@@ -35,8 +36,13 @@ import {
 } from 'lucide-react';
 
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const sidebarCollapsed = useThemeStore((state) => state.sidebarCollapsed);
+  const [sidebarOpen, setSidebarOpen] = useState(!sidebarCollapsed);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(!sidebarCollapsed);
+  }, [sidebarCollapsed]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
@@ -108,14 +114,11 @@ const DashboardLayout = () => {
         name: 'Accounts',
         path: '/accounts',
         icon: CreditCard,
-        roles: ['ADMIN', 'TELLER', 'MANAGER'],
-        // Only TELLER can create accounts, ADMIN can only view
-        subItems: hasRole('TELLER') ? [
+        roles: ['ADMIN', 'MANAGER', 'TELLER'],
+        subItems: [
           { name: 'All Accounts', path: '/accounts' },
           { name: 'Create Savings', path: '/accounts/create-savings', icon: PlusCircle },
           { name: 'Create Current', path: '/accounts/create-current', icon: PlusCircle },
-        ] : [
-          { name: 'All Accounts', path: '/accounts' },
         ],
       },
       {

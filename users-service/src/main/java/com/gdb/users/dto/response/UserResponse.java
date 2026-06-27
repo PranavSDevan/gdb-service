@@ -31,4 +31,7 @@ public class UserResponse {
 
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
+
+    @JsonProperty("kyc_number")
+    private String kycNumber;
 }

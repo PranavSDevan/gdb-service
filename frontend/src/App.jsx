@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout';
@@ -81,6 +83,12 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
+  const initializeTheme = useThemeStore((state) => state.initializeTheme);
+
+  useEffect(() => {
+    initializeTheme();
+  }, [initializeTheme]);
+
   return (
     <BrowserRouter>
       <Toaster
@@ -129,11 +137,18 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
 
           {/* Accounts */}
-          <Route path="/accounts" element={<AccountsPage />} />
+          <Route
+            path="/accounts"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
+                <AccountsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/accounts/create-savings"
             element={
-              <ProtectedRoute allowedRoles={['ADMIN', 'TELLER']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
                 <CreateSavingsAccount />
               </ProtectedRoute>
             }
@@ -141,16 +156,23 @@ function App() {
           <Route
             path="/accounts/create-current"
             element={
-              <ProtectedRoute allowedRoles={['ADMIN', 'TELLER']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
                 <CreateCurrentAccount />
               </ProtectedRoute>
             }
           />
-          <Route path="/accounts/:accountNumber" element={<AccountDetailsPage />} />
+          <Route
+            path="/accounts/:accountNumber"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
+                <AccountDetailsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/accounts/:accountNumber/edit-savings"
             element={
-              <ProtectedRoute allowedRoles={['ADMIN', 'TELLER']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
                 <EditSavingsAccount />
               </ProtectedRoute>
             }
@@ -158,7 +180,7 @@ function App() {
           <Route
             path="/accounts/:accountNumber/edit-current"
             element={
-              <ProtectedRoute allowedRoles={['ADMIN', 'TELLER']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'TELLER']}>
                 <EditCurrentAccount />
               </ProtectedRoute>
             }

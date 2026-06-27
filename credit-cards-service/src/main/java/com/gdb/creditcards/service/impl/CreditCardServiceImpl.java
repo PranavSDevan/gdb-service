@@ -1,13 +1,16 @@
 package com.gdb.creditcards.service.impl;
 
 import com.gdb.creditcards.domain.CreditCard;
+import com.gdb.creditcards.domain.CreditCardTransaction;
 import com.gdb.creditcards.dto.CreditCardDto;
 import com.gdb.creditcards.repository.CreditCardRepository;
+import com.gdb.creditcards.repository.CreditCardTransactionRepository;
 import com.gdb.creditcards.service.CreditCardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class CreditCardServiceImpl implements CreditCardService {
 
     private final CreditCardRepository creditCardRepository;
+    private final CreditCardTransactionRepository creditCardTransactionRepository;
     private final Random random = new Random();
 
     @Override
@@ -49,6 +53,7 @@ public class CreditCardServiceImpl implements CreditCardService {
         card.setStatus("ACTIVE");
 
         CreditCard saved = creditCardRepository.save(card);
+        seedMockTransactions(saved.getId());
         return convertToDto(saved);
     }
 
@@ -78,7 +83,40 @@ public class CreditCardServiceImpl implements CreditCardService {
         }
 
         CreditCard saved = creditCardRepository.save(card);
+
+        // Save payment transaction record to database
+        CreditCardTransaction paymentTx = new CreditCardTransaction();
+        paymentTx.setCardId(id);
+        paymentTx.setMerchant("Credit Card Bill Payment");
+        paymentTx.setAmount(amount);
+        paymentTx.setType("Payment");
+        paymentTx.setDate(LocalDateTime.now());
+        paymentTx.setStatus("Completed");
+        creditCardTransactionRepository.save(paymentTx);
+
         return convertToDto(saved);
+    }
+
+    private void seedMockTransactions(String cardId) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Object[]> initialTxns = List.of(
+            new Object[]{"Amazon",           4599.00,  "Purchase",  now.minusDays(25)},
+            new Object[]{"Uber",              349.00,  "Purchase",  now.minusDays(22)},
+            new Object[]{"Flipkart",         8750.00,  "Purchase",  now.minusDays(18)},
+            new Object[]{"Swiggy",            620.00,  "Purchase",  now.minusDays(14)},
+            new Object[]{"BookMyShow",       1200.00,  "Purchase",  now.minusDays(10)},
+            new Object[]{"Netflix",          649.00,   "Purchase",  now.minusDays(7)}
+        );
+        for (Object[] data : initialTxns) {
+            CreditCardTransaction tx = new CreditCardTransaction();
+            tx.setCardId(cardId);
+            tx.setMerchant((String) data[0]);
+            tx.setAmount((Double) data[1]);
+            tx.setType((String) data[2]);
+            tx.setDate((LocalDateTime) data[3]);
+            tx.setStatus("Completed");
+            creditCardTransactionRepository.save(tx);
+        }
     }
 
     private CreditCardDto convertToDto(CreditCard card) {

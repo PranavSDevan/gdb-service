@@ -21,6 +21,7 @@ public class UserRowMapper implements RowMapper<User> {
                 .isActive(rs.getBoolean("is_active"))
                 .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
                 .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                .kycNumber(rs.getString("kyc_number"))
                 .build();
     }
 }

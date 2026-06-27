@@ -37,6 +37,8 @@ public class SettingsServiceImpl implements SettingsService {
         settings.setEmailNotifications(settingsDto.isEmailNotifications());
         settings.setSmsNotifications(settingsDto.isSmsNotifications());
         settings.setTwoFactorAuthEnabled(settingsDto.isTwoFactorAuthEnabled());
+        settings.setCompactMode(settingsDto.isCompactMode());
+        settings.setSidebarCollapsed(settingsDto.isSidebarCollapsed());
         Settings saved = settingsRepository.save(settings);
         return convertToDto(saved);
     }
@@ -49,6 +51,8 @@ public class SettingsServiceImpl implements SettingsService {
         dto.setEmailNotifications(settings.isEmailNotifications());
         dto.setSmsNotifications(settings.isSmsNotifications());
         dto.setTwoFactorAuthEnabled(settings.isTwoFactorAuthEnabled());
+        dto.setCompactMode(settings.getCompactMode() != null && settings.getCompactMode());
+        dto.setSidebarCollapsed(settings.getSidebarCollapsed() != null && settings.getSidebarCollapsed());
         return dto;
     }
 }

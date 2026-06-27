@@ -13,4 +13,5 @@ public class VerifyCredentialsResponse {
     private String role;
     @JsonProperty("isActive")
     private boolean isActive;
+    private String username;
 }

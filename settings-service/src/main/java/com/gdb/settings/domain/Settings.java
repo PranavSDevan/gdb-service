@@ -24,4 +24,10 @@ public class Settings {
     
     @Column(name = "two_factor_auth_enabled")
     private boolean twoFactorAuthEnabled = false;
+
+    @Column(name = "compact_mode")
+    private Boolean compactMode = false;
+
+    @Column(name = "sidebar_collapsed")
+    private Boolean sidebarCollapsed = false;
 }

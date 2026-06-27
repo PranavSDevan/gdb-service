@@ -39,12 +39,20 @@ public class UserServiceImpl implements UserService {
         String hashedPassword = BCrypt.hashpw(request.getPassword(), BCrypt.gensalt(UserConstants.BCRYPT_SALT_ROUNDS));
         String role = request.getRole() != null ? request.getRole() : UserConstants.ROLE_TELLER;
 
+        java.util.Random random = new java.util.Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            sb.append(random.nextInt(10));
+        }
+        String kycNumber = sb.toString();
+
         User user = User.builder()
                 .username(request.getUsername())
                 .loginId(request.getLoginId())
                 .password(hashedPassword)
                 .role(role)
                 .isActive(true)
+                .kycNumber(kycNumber)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -101,8 +109,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserByLoginId(String loginId) {
-        return userRepository.findByLoginId(loginId)
+        User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with loginId: " + loginId));
+        if (user.getKycNumber() == null || user.getKycNumber().isBlank()) {
+            java.util.Random random = new java.util.Random();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 12; i++) {
+                sb.append(random.nextInt(10));
+            }
+            String randomKyc = sb.toString();
+            user.setKycNumber(randomKyc);
+            userRepository.update(user);
+            log.info("Dynamically generated new KYC number {} for user '{}'", randomKyc, loginId);
+        }
+        return user;
     }
 
     @Override
@@ -170,6 +190,7 @@ public class UserServiceImpl implements UserService {
                     .userId(user.getUserId())
                     .role(user.getRole())
                     .isActive(true)
+                    .username(user.getUsername())
                     .build();
         }
 
@@ -178,6 +199,14 @@ public class UserServiceImpl implements UserService {
                 .userId(user.getUserId())
                 .role(user.getRole())
                 .isActive(true)
+                .username(user.getUsername())
                 .build();
+    }
+
+    @Override
+    public User getUserByKycNumber(String kycNumber) {
+        log.info("Fetching user by KYC number: {}", kycNumber);
+        return userRepository.findByKycNumber(kycNumber)
+                .orElseThrow(() -> new com.gdb.users.exception.UserNotFoundException("User not found with KYC number: " + kycNumber));
     }
 }

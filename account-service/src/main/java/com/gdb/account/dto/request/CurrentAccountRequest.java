@@ -29,4 +29,7 @@ public class CurrentAccountRequest {
     @NotBlank
     @Pattern(regexp = "SILVER|GOLD|PREMIUM")
     private String privilege;
+
+    @JsonProperty("kyc_number")
+    private String kycNumber;
 }

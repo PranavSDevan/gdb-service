@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { settingsService } from '../../services/settingsService';
+import { useThemeStore } from '../../store/themeStore';
 import {
   Settings,
   Bell,
@@ -23,6 +24,9 @@ import toast from 'react-hot-toast';
 
 const SettingsPage = () => {
   const { user } = useAuthStore();
+  const setTheme = useThemeStore((state) => state.setTheme);
+  const setCompactMode = useThemeStore((state) => state.setCompactMode);
+  const setSidebarCollapsed = useThemeStore((state) => state.setSidebarCollapsed);
   
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
@@ -90,10 +94,19 @@ const SettingsPage = () => {
             ...prev,
             twoFactorEnabled: data.twoFactorAuthEnabled !== undefined ? data.twoFactorAuthEnabled : false,
           }));
+          const loadedTheme = (data.theme || 'LIGHT').toLowerCase();
+          const loadedCompact = data.compactMode !== undefined ? data.compactMode : false;
+          const loadedSidebar = data.sidebarCollapsed !== undefined ? data.sidebarCollapsed : false;
+          
           setAppearance(prev => ({
             ...prev,
-            theme: (data.theme || 'LIGHT').toLowerCase(),
+            theme: loadedTheme,
+            compactMode: loadedCompact,
+            sidebarCollapsed: loadedSidebar,
           }));
+          setTheme(loadedTheme);
+          setCompactMode(loadedCompact);
+          setSidebarCollapsed(loadedSidebar);
         }
       } catch (err) {
         console.error("Error loading settings from backend", err);
@@ -101,7 +114,7 @@ const SettingsPage = () => {
     };
     
     loadSettings();
-  }, [user]);
+  }, [user, setTheme, setCompactMode, setSidebarCollapsed]);
 
   const handleSaveSettings = async () => {
     if (!user || !user.id) return;
@@ -113,9 +126,14 @@ const SettingsPage = () => {
         language: generalSettings.language,
         emailNotifications: notificationSettings.emailNotifications,
         smsNotifications: notificationSettings.smsAlerts,
-        twoFactorAuthEnabled: securitySettings.twoFactorEnabled
+        twoFactorAuthEnabled: securitySettings.twoFactorEnabled,
+        compactMode: appearance.compactMode,
+        sidebarCollapsed: appearance.sidebarCollapsed
       };
       await settingsService.updateSettings(user.id, payload);
+      setTheme(appearance.theme);
+      setCompactMode(appearance.compactMode);
+      setSidebarCollapsed(appearance.sidebarCollapsed);
       toast.success('Settings saved successfully!');
     } catch (error) {
       toast.error(error.message || 'Failed to save settings');

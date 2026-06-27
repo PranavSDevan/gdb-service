@@ -25,9 +25,12 @@ import {
   Briefcase,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import { usersService } from '../../services/usersService';
 
 const CreateCurrentAccount = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { createCurrentAccount, verifyCompanyRegistration, isLoading } = useAccountStore();
   const { notifyAccountCreated } = useNotificationStore();
 
@@ -48,6 +51,7 @@ const CreateCurrentAccount = () => {
     pin: '',
     confirmPin: '',
     privilege: 'SILVER',
+    kyc_number: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -120,6 +124,12 @@ const CreateCurrentAccount = () => {
       newErrors.email = 'Invalid email format';
     }
 
+    if (!formData.kyc_number || !formData.kyc_number.trim()) {
+      newErrors.kyc_number = 'KYC number is required';
+    } else if (!/^\d{12}$/.test(formData.kyc_number)) {
+      newErrors.kyc_number = 'KYC number must be exactly 12 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -189,11 +199,49 @@ const CreateCurrentAccount = () => {
     }
   };
 
-  const handleNext = () => {
+  const [kycVerifying, setKycVerifying] = useState(false);
+
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
       setStep(2);
-    } else if (step === 2 && validateStep2()) {
-      setStep(3);
+    } else if (step === 2) {
+      if (!validateStep2()) return;
+      
+      setKycVerifying(true);
+      try {
+        const gdbUser = await usersService.getByKyc(formData.kyc_number);
+        if (!gdbUser) {
+          toast.error('No user found in the GDB database with the provided KYC number.');
+          setErrors(prev => ({ ...prev, kyc_number: 'User profile with this KYC number does not exist' }));
+          setKycVerifying(false);
+          return;
+        }
+
+        // Teller restriction check
+        if (user && user.role === 'TELLER') {
+          if (user.username.toLowerCase() !== gdbUser.username.toLowerCase()) {
+            const errorMsg = `Access Denied: Tellers can only onboard accounts using their own KYC number (${user.username}). This KYC belongs to ${gdbUser.username}.`;
+            toast.error(errorMsg);
+            setErrors(prev => ({ ...prev, kyc_number: errorMsg }));
+            setKycVerifying(false);
+            return;
+          }
+        }
+
+        // Auto-fill signatory name if not already filled
+        if (!formData.authorized_person) {
+          setFormData(prev => ({ ...prev, authorized_person: gdbUser.username }));
+        }
+
+        toast.success(`KYC verified for ${gdbUser.username}!`);
+        setStep(3);
+      } catch (err) {
+        const errorMsg = 'No user found in the GDB database with the provided KYC number. Please request Admin/Manager to create the user profile first.';
+        toast.error(errorMsg);
+        setErrors(prev => ({ ...prev, kyc_number: errorMsg }));
+      } finally {
+        setKycVerifying(false);
+      }
     }
   };
 
@@ -215,6 +263,7 @@ const CreateCurrentAccount = () => {
         website: formData.company_website || null,
         pin: formData.pin,
         privilege: formData.privilege,
+        kyc_number: formData.kyc_number,
       });
 
       // Send notification with company name
@@ -578,6 +627,23 @@ const CreateCurrentAccount = () => {
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
+
+                <div>
+                  <label className="input-label flex items-center gap-2">
+                    <Hash className="w-4 h-4" />
+                    Authorized Person's KYC Number *
+                  </label>
+                  <input
+                    type="text"
+                    name="kyc_number"
+                    value={formData.kyc_number || ''}
+                    onChange={handleChange}
+                    className={`input-field ${errors.kyc_number ? 'border-red-500' : ''}`}
+                    placeholder="Enter 12-digit KYC number"
+                    maxLength={12}
+                  />
+                  {errors.kyc_number && <p className="text-red-500 text-sm mt-1">{errors.kyc_number}</p>}
+                </div>
               </div>
 
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -719,10 +785,19 @@ const CreateCurrentAccount = () => {
                 type="button" 
                 onClick={handleNext} 
                 className="btn-success flex items-center gap-2"
-                disabled={step === 1 && !companyVerified}
+                disabled={(step === 1 && !companyVerified) || kycVerifying}
               >
-                Continue
-                <CheckCircle className="w-4 h-4" />
+                {kycVerifying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Verifying KYC...
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <CheckCircle className="w-4 h-4" />
+                  </>
+                )}
               </button>
             ) : (
               <button

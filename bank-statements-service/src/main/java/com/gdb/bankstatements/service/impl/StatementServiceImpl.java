@@ -8,6 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -22,6 +29,9 @@ public class StatementServiceImpl implements StatementService {
 
     private final StatementRepository statementRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${transactions.service.url}")
+    private String transactionsServiceUrl;
 
     @Override
     public StatementDto generateStatement(StatementDto request) {
@@ -74,43 +84,49 @@ public class StatementServiceImpl implements StatementService {
     private String getTransactionsCsv(String accountId, LocalDate fromDate, LocalDate toDate) {
         StringBuilder csv = new StringBuilder();
         try {
-            // Try fetching from transactions-service. Since accountId can be accountNumber, we call:
-            // GET http://localhost:8002/api/v1/transaction-logs/{accountNumber}
-            // Note: Since we are running microservices, port is 8002.
-            String url = "http://localhost:8002/api/v1/transaction-logs/" + accountId;
+            String url = transactionsServiceUrl + "/api/v1/transaction-logs/" + accountId;
             log.info("Attempting to fetch transaction logs from URL: {}", url);
             
-            // To pass auth, we are calling internally. If no auth is active or if we bypass it.
-            // Since transactions-service requires role validation (any staff role), it might block without token.
-            // If it blocks or fails, we gracefully catch and generate mock data.
-            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            HttpHeaders headers = new HttpHeaders();
+            // Propagate the Authorization header from the incoming request to transactions-service
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                String authHeader = attributes.getRequest().getHeader("Authorization");
+                if (authHeader != null) {
+                    headers.set("Authorization", authHeader);
+                }
+            }
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<Map> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            Map<String, Object> response = responseEntity.getBody();
+
             if (response != null && response.containsKey("logs")) {
                 List<Map<String, Object>> logs = (List<Map<String, Object>>) response.get("logs");
                 for (Map<String, Object> logItem : logs) {
-                    String date = String.valueOf(logItem.get("transactionDate"));
+                    String date = String.valueOf(logItem.get("created_at"));
                     String desc = String.valueOf(logItem.get("description"));
-                    String type = String.valueOf(logItem.get("transactionType"));
+                    String type = String.valueOf(logItem.get("transaction_type"));
                     String amount = String.valueOf(logItem.get("amount"));
-                    // Try to filter by date range
-                    LocalDate logDate = LocalDate.parse(date.substring(0, 10));
-                    if ((logDate.isAfter(fromDate) || logDate.isEqual(fromDate)) &&
-                            (logDate.isBefore(toDate) || logDate.isEqual(toDate))) {
-                        csv.append(date.substring(0, 10)).append(",")
-                           .append(desc).append(",")
-                           .append(type).append(",")
-                           .append(amount).append(",N/A\n");
+                    if (date != null && !date.equals("null") && date.length() >= 10) {
+                        // Try to filter by date range
+                        LocalDate logDate = LocalDate.parse(date.substring(0, 10));
+                        if ((logDate.isAfter(fromDate) || logDate.isEqual(fromDate)) &&
+                                (logDate.isBefore(toDate) || logDate.isEqual(toDate))) {
+                            csv.append(date.substring(0, 10)).append(",")
+                               .append(desc).append(",")
+                               .append(type).append(",")
+                               .append(amount).append(",N/A\n");
+                        }
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("Failed to fetch transactions from transaction-service: {}. Generating fallback data.", e.getMessage());
+            log.error("Failed to fetch transactions from transaction-service: {}", e.getMessage(), e);
         }
 
         if (csv.length() == 0) {
-            // Fallback generation logic
-            csv.append("2026-06-25,Amazon Purchase,DEBIT,1299.00,48701.00\n");
-            csv.append("2026-06-22,Salary Credit,CREDIT,50000.00,50000.00\n");
-            csv.append("2026-06-15,Zomato Online,DEBIT,450.00,450.00\n");
+            csv.append("No transaction history found for the specified period.\n");
         }
 
         return csv.toString();

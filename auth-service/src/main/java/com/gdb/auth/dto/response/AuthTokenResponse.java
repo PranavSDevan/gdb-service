@@ -31,5 +31,7 @@ public class AuthTokenResponse {
         @JsonProperty("login_id")
         private String loginId;
         private String role; // role is same case
+        @JsonProperty("username")
+        private String username;
     }
 }

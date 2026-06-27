@@ -1,7 +1,9 @@
 import React from 'react';
 import { CreditCard as CardIcon, Wifi } from 'lucide-react';
+import { useAuthStore } from '../../../store/authStore';
 
 const CreditCardWidget = ({ data }) => {
+  const { user } = useAuthStore();
   if (!data) return null;
 
   // Determine card style based on type
@@ -44,7 +46,7 @@ const CreditCardWidget = ({ data }) => {
         <div className="flex justify-between items-end">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase opacity-75 tracking-wider">Card Holder</span>
-            <span className="font-medium tracking-wide">CARDHOLDER NAME</span>
+            <span className="font-medium tracking-wide uppercase">{user?.username || 'CARDHOLDER NAME'}</span>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[10px] uppercase opacity-75 tracking-wider">Status</span>
