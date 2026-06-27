@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { creditCardService } from '../services/mockCreditCardService';
 import { Briefcase, IndianRupee, CreditCard, CheckCircle, ArrowLeft, ShieldCheck, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
+import useSettingsStore from '../../../store/settingsStore';
 
 const ApplyCreditCard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const currency = useSettingsStore((state) => state.currency);
   const [formData, setFormData] = useState({
     employmentType: '',
     salary: '',
@@ -160,7 +162,7 @@ const ApplyCreditCard = () => {
                 {/* Monthly Salary */}
                 <div className="group">
                   <label className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-primary-600 transition-colors">
-                    Monthly Net Salary (₹) <span className="text-red-500">*</span>
+                    Monthly Net Salary ({currency}) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

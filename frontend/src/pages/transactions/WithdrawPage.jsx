@@ -4,6 +4,7 @@ import { useAccountStore } from '../../store/accountStore';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -28,6 +29,7 @@ const WithdrawPage = () => {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [enterManually, setEnterManually] = useState(false);
   const [formData, setFormData] = useState({
     accountNumber: '',
     amount: '',
@@ -170,13 +172,7 @@ const WithdrawPage = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   return (
     <div className="animate-fade-in max-w-3xl mx-auto">
@@ -240,23 +236,48 @@ const WithdrawPage = () => {
           <div className="space-y-6">
             {/* Account Selection */}
             <div>
-              <label className="label">
-                <CreditCard className="w-4 h-4" />
-                Select Account
-              </label>
-              <select
-                name="accountNumber"
-                value={formData.accountNumber}
-                onChange={handleInputChange}
-                className={`input w-full ${errors.accountNumber ? 'border-red-500' : ''}`}
-              >
-                <option value="">-- Select an account --</option>
-                {activeAccounts.map(acc => (
-                  <option key={acc.id} value={acc.account_number}>
-                    #{acc.account_number} - {acc.name} (Bal: {formatCurrency(acc.balance)})
-                  </option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label mb-0">
+                  <CreditCard className="w-4 h-4" />
+                  Account Number
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEnterManually(!enterManually);
+                    setFormData(prev => ({ ...prev, accountNumber: '' }));
+                    setSelectedAccount(null);
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  {enterManually ? 'Choose from list' : 'Enter account number manually'}
+                </button>
+              </div>
+
+              {enterManually ? (
+                <input
+                  type="text"
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter account number"
+                  className={`input w-full ${errors.accountNumber ? 'border-red-500' : ''}`}
+                />
+              ) : (
+                <select
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  className={`input w-full ${errors.accountNumber ? 'border-red-500' : ''}`}
+                >
+                  <option value="">-- Select an account --</option>
+                  {activeAccounts.map(acc => (
+                    <option key={acc.id} value={acc.account_number}>
+                      #{acc.account_number} - {acc.name} (Bal: {formatCurrency(acc.balance)})
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.accountNumber && (
                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                   <AlertCircle className="w-4 h-4" /> {errors.accountNumber}

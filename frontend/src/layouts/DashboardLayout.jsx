@@ -49,6 +49,7 @@ const DashboardLayout = () => {
   
   const { user, logout, hasRole } = useAuthStore();
   const fetchAndApplySettings = useSettingsStore((state) => state.fetchAndApplySettings);
+  const language = useSettingsStore((state) => state.language);
   const t = useSettingsStore((state) => state.t);
 
   useEffect(() => {
@@ -179,9 +180,9 @@ const DashboardLayout = () => {
         icon: CreditCard,
         roles: ['ADMIN', 'TELLER', 'MANAGER'],
         subItems: [
-          { name: 'Dashboard', path: '/credit-cards', icon: LayoutDashboard },
+          { name: 'Card Dashboard', path: '/credit-cards', icon: LayoutDashboard },
           { name: 'Card Details', path: '/credit-cards/details', icon: CreditCard },
-          { name: 'Transactions', path: '/credit-cards/transactions', icon: FileText },
+          { name: 'Card Transactions', path: '/credit-cards/transactions', icon: FileText },
           { name: 'Pay Bill', path: '/credit-cards/pay', icon: Receipt },
         ]
       },

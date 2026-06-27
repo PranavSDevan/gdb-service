@@ -10,4 +10,5 @@ public interface CreditCardService {
     CreditCardDto getCardDetails(String id);
     CreditCardDto payCreditCardBill(String id, Double amount);
     List<CreditCardTransactionDto> getCardTransactions(String cardId);
+    CreditCardDto makePurchase(String cardId, String merchant, Double amount);
 }

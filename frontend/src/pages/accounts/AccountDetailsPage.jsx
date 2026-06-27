@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAccountStore } from '../../store/accountStore';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   ArrowLeft,
   CreditCard,
@@ -87,13 +88,7 @@ const AccountDetailsPage = () => {
     );
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   const handleToggleStatus = async () => {
     try {

@@ -4,6 +4,7 @@ import { useAccountStore } from '../../store/accountStore';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -122,6 +123,8 @@ const TransferPage = () => {
   const [sourceAccount, setSourceAccount] = useState(null);
   const [destinationAccount, setDestinationAccount] = useState(null);
   const [transactionResult, setTransactionResult] = useState(null);
+  const [enterFromManually, setEnterFromManually] = useState(false);
+  const [enterToManually, setEnterToManually] = useState(false);
   
   // Processing state for gateway validation UI
   const [processingState, setProcessingState] = useState({
@@ -391,13 +394,7 @@ const TransferPage = () => {
   // Helper function for delay
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   const AccountCard = ({ account, label, type }) => (
     <div className={`p-4 rounded-lg border-2 ${
@@ -486,23 +483,48 @@ const TransferPage = () => {
           <div className="space-y-6">
             {/* Source Account */}
             <div>
-              <label className="label">
-                <CreditCard className="w-4 h-4" />
-                From Account (Source)
-              </label>
-              <select
-                name="fromAccount"
-                value={formData.fromAccount}
-                onChange={handleInputChange}
-                className={`input w-full ${errors.fromAccount ? 'border-red-500' : ''}`}
-              >
-                <option value="">-- Select source account --</option>
-                {activeAccounts.map(acc => (
-                  <option key={acc.id} value={acc.account_number} disabled={acc.account_number === formData.toAccount}>
-                    #{acc.account_number} - {acc.name} (Bal: {formatCurrency(acc.balance)})
-                  </option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label mb-0">
+                  <CreditCard className="w-4 h-4" />
+                  From Account (Source)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEnterFromManually(!enterFromManually);
+                    setFormData(prev => ({ ...prev, fromAccount: '' }));
+                    setSourceAccount(null);
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  {enterFromManually ? 'Choose from list' : 'Enter manually'}
+                </button>
+              </div>
+
+              {enterFromManually ? (
+                <input
+                  type="text"
+                  name="fromAccount"
+                  value={formData.fromAccount}
+                  onChange={handleInputChange}
+                  placeholder="Enter source account number"
+                  className={`input w-full ${errors.fromAccount ? 'border-red-500' : ''}`}
+                />
+              ) : (
+                <select
+                  name="fromAccount"
+                  value={formData.fromAccount}
+                  onChange={handleInputChange}
+                  className={`input w-full ${errors.fromAccount ? 'border-red-500' : ''}`}
+                >
+                  <option value="">-- Select source account --</option>
+                  {activeAccounts.map(acc => (
+                    <option key={acc.id} value={acc.account_number} disabled={acc.account_number === formData.toAccount}>
+                      #{acc.account_number} - {acc.name} (Bal: {formatCurrency(acc.balance)})
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.fromAccount && (
                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                   <AlertCircle className="w-4 h-4" /> {errors.fromAccount}
@@ -512,23 +534,48 @@ const TransferPage = () => {
 
             {/* Destination Account */}
             <div>
-              <label className="label">
-                <CreditCard className="w-4 h-4" />
-                To Account (Destination)
-              </label>
-              <select
-                name="toAccount"
-                value={formData.toAccount}
-                onChange={handleInputChange}
-                className={`input w-full ${errors.toAccount ? 'border-red-500' : ''}`}
-              >
-                <option value="">-- Select destination account --</option>
-                {activeAccounts.map(acc => (
-                  <option key={acc.id} value={acc.account_number} disabled={acc.account_number === formData.fromAccount}>
-                    #{acc.account_number} - {acc.name} ({acc.account_type})
-                  </option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label mb-0">
+                  <CreditCard className="w-4 h-4" />
+                  To Account (Destination)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEnterToManually(!enterToManually);
+                    setFormData(prev => ({ ...prev, toAccount: '' }));
+                    setDestinationAccount(null);
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  {enterToManually ? 'Choose from list' : 'Enter manually'}
+                </button>
+              </div>
+
+              {enterToManually ? (
+                <input
+                  type="text"
+                  name="toAccount"
+                  value={formData.toAccount}
+                  onChange={handleInputChange}
+                  placeholder="Enter destination account number"
+                  className={`input w-full ${errors.toAccount ? 'border-red-500' : ''}`}
+                />
+              ) : (
+                <select
+                  name="toAccount"
+                  value={formData.toAccount}
+                  onChange={handleInputChange}
+                  className={`input w-full ${errors.toAccount ? 'border-red-500' : ''}`}
+                >
+                  <option value="">-- Select destination account --</option>
+                  {activeAccounts.map(acc => (
+                    <option key={acc.id} value={acc.account_number} disabled={acc.account_number === formData.fromAccount}>
+                      #{acc.account_number} - {acc.name} ({acc.account_type})
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.toAccount && (
                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                   <AlertCircle className="w-4 h-4" /> {errors.toAccount}

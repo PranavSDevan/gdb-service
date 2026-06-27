@@ -33,6 +33,13 @@ public class CreditCardServiceImpl implements CreditCardService {
 
     @Override
     public CreditCardDto applyForCard(CreditCardDto application) {
+        com.gdb.creditcards.security.UserContext context = com.gdb.creditcards.security.UserContextHolder.getContext();
+        if (context != null && "TELLER".equalsIgnoreCase(context.getRole())) {
+            if (!context.getUserId().toString().equals(application.getUserId())) {
+                throw new RuntimeException("ACCESS_DENIED");
+            }
+        }
+
         double limit = 100000.0;
         if ("GOLD".equalsIgnoreCase(application.getCardType())) {
             limit = 250000.0;
@@ -119,6 +126,33 @@ public class CreditCardServiceImpl implements CreditCardService {
         return convertToDto(saved);
     }
 
+    @Override
+    public CreditCardDto makePurchase(String id, String merchant, Double amount) {
+        CreditCard card = creditCardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Card not found"));
+
+        if (card.getAvailableCredit() < amount) {
+            throw new RuntimeException("Insufficient credit limit");
+        }
+
+        card.setAvailableCredit(card.getAvailableCredit() - amount);
+        card.setOutstandingAmount(card.getOutstandingAmount() + amount);
+        card.setMinimumDue(card.getOutstandingAmount() * 0.05);
+
+        CreditCard saved = creditCardRepository.save(card);
+
+        CreditCardTransaction transaction = new CreditCardTransaction();
+        transaction.setCardId(id);
+        transaction.setDate(LocalDateTime.now());
+        transaction.setMerchant(merchant);
+        transaction.setAmount(amount);
+        transaction.setType("Purchase");
+        transaction.setStatus("COMPLETED");
+        creditCardTransactionRepository.save(transaction);
+
+        return convertToDto(saved);
+    }
+
     private void seedMockTransactions(String cardId) {
         LocalDateTime now = LocalDateTime.now();
         List<Object[]> initialTxns = List.of(
@@ -146,17 +180,30 @@ public class CreditCardServiceImpl implements CreditCardService {
         dto.setId(card.getId());
         dto.setUserId(card.getUserId());
         
-        // Format the card number with spaces if it is a 16-digit string
+        // Determine if masking is required
+        boolean mask = false;
+        com.gdb.creditcards.security.UserContext context = com.gdb.creditcards.security.UserContextHolder.getContext();
+        if (context != null && "TELLER".equalsIgnoreCase(context.getRole())) {
+            // If caller is Teller, and the card's userId does not match the Teller's own user ID
+            if (!context.getUserId().toString().equals(card.getUserId())) {
+                mask = true;
+            }
+        }
+        
         String rawNumber = card.getCardNumber();
         if (rawNumber != null) {
             String cleanNumber = rawNumber.replaceAll("\\s+", "");
-            if (cleanNumber.length() == 16) {
-                dto.setCardNumber(cleanNumber.substring(0, 4) + " " + 
-                                  cleanNumber.substring(4, 8) + " " + 
-                                  cleanNumber.substring(8, 12) + " " + 
-                                  cleanNumber.substring(12, 16));
+            if (mask) {
+                dto.setCardNumber("**** **** **** " + (cleanNumber.length() >= 4 ? cleanNumber.substring(cleanNumber.length() - 4) : ""));
             } else {
-                dto.setCardNumber(rawNumber);
+                if (cleanNumber.length() == 16) {
+                    dto.setCardNumber(cleanNumber.substring(0, 4) + " " + 
+                                      cleanNumber.substring(4, 8) + " " + 
+                                      cleanNumber.substring(8, 12) + " " + 
+                                      cleanNumber.substring(12, 16));
+                } else {
+                    dto.setCardNumber(rawNumber);
+                }
             }
         } else {
             dto.setCardNumber(null);
@@ -168,9 +215,34 @@ public class CreditCardServiceImpl implements CreditCardService {
         dto.setOutstandingAmount(card.getOutstandingAmount());
         dto.setMinimumDue(card.getMinimumDue());
         dto.setNextDueDate(card.getNextDueDate());
-        dto.setCardHolderName(card.getCardHolderName());
+        
+        if (mask) {
+            dto.setCardHolderName(maskName(card.getCardHolderName()));
+        } else {
+            dto.setCardHolderName(card.getCardHolderName());
+        }
+        
         dto.setStatus(card.getStatus());
         return dto;
+    }
+
+    private String maskName(String name) {
+        if (name == null || name.isBlank()) return "Masked User";
+        String[] parts = name.split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            if (part.length() > 0) {
+                sb.append(part.charAt(0));
+                if (part.length() > 1) {
+                    sb.append("*".repeat(part.length() - 1));
+                }
+            }
+            if (i < parts.length - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 
     @Override

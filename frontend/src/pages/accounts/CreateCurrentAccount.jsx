@@ -27,10 +27,12 @@ import {
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import { usersService } from '../../services/usersService';
+import useSettingsStore from '../../store/settingsStore';
 
 const CreateCurrentAccount = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
   const { createCurrentAccount, verifyCompanyRegistration, isLoading } = useAccountStore();
   const { notifyAccountCreated } = useNotificationStore();
 
@@ -490,7 +492,11 @@ const CreateCurrentAccount = () => {
                       </div>
                       <div>
                         <p className="text-slate-400">Paid-up Capital</p>
-                        <p className="text-slate-200">₹{companyData.paid_up_capital || 'N/A'}</p>
+                        <p className="text-slate-200">
+                          {companyData.paid_up_capital && !isNaN(parseFloat(companyData.paid_up_capital)) 
+                            ? formatCurrency(parseFloat(companyData.paid_up_capital)) 
+                            : 'N/A'}
+                        </p>
                       </div>
                     </div>
 

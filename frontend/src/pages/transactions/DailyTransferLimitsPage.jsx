@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { transactionsService } from '../../services/api';
+import useSettingsStore from '../../store/settingsStore';
 import {
   Shield,
   Crown,
@@ -78,13 +79,7 @@ const DailyTransferLimitsPage = () => {
     fetchTransferLimits();
   }, []);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   const formatNumber = (num) => {
     return new Intl.NumberFormat('en-IN').format(num);

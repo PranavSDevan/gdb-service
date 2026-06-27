@@ -2,6 +2,7 @@ package com.gdb.bankstatements.controller;
 
 import com.gdb.bankstatements.dto.StatementDto;
 import com.gdb.bankstatements.service.StatementService;
+import com.gdb.bankstatements.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,16 +18,19 @@ public class StatementController {
 
     @PostMapping("/generate")
     public ResponseEntity<StatementDto> generateStatement(@RequestBody StatementDto request) {
+        SecurityUtils.checkAnyStaffRole();
         return ResponseEntity.ok(statementService.generateStatement(request));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<StatementDto> getStatementStatus(@PathVariable String id) {
+        SecurityUtils.checkAnyStaffRole();
         return ResponseEntity.ok(statementService.getStatementStatus(id));
     }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> downloadStatement(@PathVariable String id) {
+        SecurityUtils.checkAnyStaffRole();
         byte[] fileData = statementService.downloadStatement(id);
         
         HttpHeaders headers = new HttpHeaders();

@@ -45,7 +45,14 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getAccount(@PathVariable Long accountNumber) {
         SecurityUtils.checkAnyStaffRole();
         AccountResponse response = accountService.getAccountByNumber(accountNumber);
-        checkTellerAccess(response);
+        
+        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
+        if (context != null && "TELLER".equalsIgnoreCase(context.getRole())) {
+            String tellerName = userClient.getUsername(context.getLoginId());
+            if (tellerName == null || response.getName() == null || !tellerName.equalsIgnoreCase(response.getName())) {
+                throw new RuntimeException("Access Denied: Tellers can only access their own accounts.");
+            }
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -55,14 +62,22 @@ public class AccountController {
             @RequestParam(required = false) String privilege,
             @RequestParam(required = false) Boolean active) {
         SecurityUtils.checkAnyStaffRole();
-        return ResponseEntity.ok(accountService.getAllAccounts(type, privilege, active));
+        List<AccountResponse> responseList = accountService.getAllAccounts(type, privilege, active);
+        
+        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
+        if (context != null && "TELLER".equalsIgnoreCase(context.getRole())) {
+            String tellerName = userClient.getUsername(context.getLoginId());
+            responseList = responseList.stream()
+                    .filter(response -> tellerName != null && response.getName() != null && tellerName.equalsIgnoreCase(response.getName()))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+        return ResponseEntity.ok(responseList);
     }
 
     @GetMapping("/{accountNumber}/balance")
     public ResponseEntity<java.util.Map<String, Object>> getBalance(@PathVariable Long accountNumber) {
         SecurityUtils.checkAnyStaffRole();
         AccountResponse account = accountService.getAccountByNumber(accountNumber);
-        checkTellerAccess(account);
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("account_number", account.getAccountNumber());
         response.put("balance", account.getBalance());
@@ -75,8 +90,6 @@ public class AccountController {
             @PathVariable Long accountNumber,
             @RequestBody java.util.Map<String, String> request) {
         SecurityUtils.checkAnyStaffRole();
-        AccountResponse account = accountService.getAccountByNumber(accountNumber);
-        checkTellerAccess(account);
         String pin = request.get("pin");
         boolean isValid = accountService.verifyPin(accountNumber, pin);
         return ResponseEntity.ok(java.util.Map.of("valid", isValid));
@@ -98,19 +111,34 @@ public class AccountController {
         }
     }
 
-    private void checkTellerAccess(AccountResponse account) {
-        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
-        if (context != null && context.getRole() != null) {
-            String role = context.getRole().toUpperCase().trim();
-            if (role.startsWith("ROLE_")) {
-                role = role.substring(5);
-            }
-            if ("TELLER".equals(role)) {
-                String tellerName = userClient.getUsername(context.getLoginId());
-                if (tellerName == null || account.getName() == null || !tellerName.equalsIgnoreCase(account.getName())) {
-                    throw new RuntimeException("ACCESS_DENIED");
+    private void maskAccountResponseForTeller(AccountResponse account) {
+        if (account == null) return;
+        account.setName(maskString(account.getName()));
+        if (account.getSavingsDetails() != null) {
+            account.getSavingsDetails().setAadharNumber(maskString(account.getSavingsDetails().getAadharNumber()));
+            account.getSavingsDetails().setPhoneNo(maskString(account.getSavingsDetails().getPhoneNo()));
+        }
+        if (account.getCurrentDetails() != null) {
+            account.getCurrentDetails().setRegistrationNo(maskString(account.getCurrentDetails().getRegistrationNo()));
+        }
+    }
+
+    private String maskString(String str) {
+        if (str == null || str.isBlank()) return "";
+        String[] parts = str.split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            if (part.length() > 0) {
+                sb.append(part.charAt(0));
+                if (part.length() > 1) {
+                    sb.append("*".repeat(part.length() - 1));
                 }
             }
+            if (i < parts.length - 1) {
+                sb.append(" ");
+            }
         }
+        return sb.toString();
     }
 }

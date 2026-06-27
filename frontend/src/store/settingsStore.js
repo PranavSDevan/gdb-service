@@ -38,6 +38,20 @@ const translations = {
     welcomeSubtitle: "Here's what's happening with your bank today.",
     statements: "Bank Statements",
     bankStatements: "Bank Statements",
+    cardDashboard: "Card Dashboard",
+    cardDetails: "Card Details",
+    cardTransactions: "Card Transactions",
+    payBill: "Pay Bill",
+    applyCreditCard: "Apply Credit Card",
+    simulatePurchase: "Simulate Purchase",
+    creditLimit: "Credit Limit",
+    availableCredit: "Available Credit",
+    outstandingAmount: "Outstanding Amount",
+    minimumDue: "Minimum Due",
+    nextDueDate: "Next Due Date",
+    paymentDueSoon: "Payment Due Soon",
+    accountSummary: "Account Summary",
+    recentActivity: "Recent Activity",
   },
   hi: {
     dashboard: "डैशबोर्ड",
@@ -74,6 +88,20 @@ const translations = {
     welcomeSubtitle: "यहाँ आज आपके बैंक की जानकारी है।",
     statements: "बैंक स्टेटमेंट",
     bankStatements: "बैंक स्टेटमेंट",
+    cardDashboard: "कार्ड डैशबोर्ड",
+    cardDetails: "कार्ड विवरण",
+    cardTransactions: "कार्ड लेन-देन",
+    payBill: "बिल भुगतान",
+    applyCreditCard: "क्रेडिट कार्ड आवेदन",
+    simulatePurchase: "खरीद अनुकरण",
+    creditLimit: "क्रेडिट सीमा",
+    availableCredit: "उपलब्ध क्रेडिट",
+    outstandingAmount: "बकाया राशि",
+    minimumDue: "न्यूनतम देय",
+    nextDueDate: "अगली देय तिथि",
+    paymentDueSoon: "भुगतान जल्द देय",
+    accountSummary: "खाता सारांश",
+    recentActivity: "हालिया गतिविधि",
   },
   ta: {
     dashboard: "டாஷ்போர்டு",
@@ -110,6 +138,20 @@ const translations = {
     welcomeSubtitle: "இன்று உங்கள் வங்கியின் நிலை இதோ.",
     statements: "வங்கி அறிக்கை",
     bankStatements: "வங்கி அறிக்கை",
+    cardDashboard: "கார்டு டாஷ்போர்டு",
+    cardDetails: "கார்டு விவரங்கள்",
+    cardTransactions: "கார்டு பரிவர்த்தனைகள்",
+    payBill: "பில் செலுத்து",
+    applyCreditCard: "கிரெடிட் கார்டு விண்ணப்பம்",
+    simulatePurchase: "கொள்முதல் உருவகம்",
+    creditLimit: "கடன் வரம்பு",
+    availableCredit: "கிடைக்கும் கடன்",
+    outstandingAmount: "நிலுவை தொகை",
+    minimumDue: "குறைந்தபட்ச தொகை",
+    nextDueDate: "அடுத்த தவணை தேதி",
+    paymentDueSoon: "விரைவில் பணம் செலுத்த வேண்டும்",
+    accountSummary: "கணக்கு சுருக்கம்",
+    recentActivity: "சமீபத்திய செயல்பாடு",
   },
   te: {
     dashboard: "డ్యాష్‌బోర్డ్",
@@ -146,6 +188,20 @@ const translations = {
     welcomeSubtitle: "ఈరోజు మీ బ్యాంక్ వివరాలు ఇక్కడ ఉన్నాయి.",
     statements: "బ్యాంక్ స్టేట్‌మెంట్",
     bankStatements: "బ్యాంక్ స్టేట్‌మెంట్",
+    cardDashboard: "కార్డ్ డ్యాష్‌బోర్డ్",
+    cardDetails: "కార్డ్ వివరాలు",
+    cardTransactions: "కార్డ్ లావాదేవీలు",
+    payBill: "బిల్లు చెల్లించు",
+    applyCreditCard: "క్రెడిట్ కార్డ్ దరఖాస్తు",
+    simulatePurchase: "కొనుగోలు అనుకరణ",
+    creditLimit: "క్రెడిట్ పరిమితి",
+    availableCredit: "అందుబాటులో ఉన్న క్రెడిట్",
+    outstandingAmount: "బకాయి మొత్తం",
+    minimumDue: "కనిష్ట చెల్లింపు",
+    nextDueDate: "తదుపరి గడువు తేదీ",
+    paymentDueSoon: "త్వరలో చెల్లింపు",
+    accountSummary: "ఖాతా సారాంశం",
+    recentActivity: "ఇటీవలి కార్యకలాపం",
   }
 };
 
@@ -224,6 +280,17 @@ export const useSettingsStore = create((set, get) => ({
   formatCurrencyAmount: (amount) => {
     const { currency } = get();
     
+    // Exchange rates from INR
+    const exchangeRates = {
+      INR: 1,
+      USD: 1 / 83.5,
+      EUR: 1 / 91.0,
+      GBP: 1 / 106.0,
+    };
+
+    const rate = exchangeRates[currency] || 1;
+    const convertedAmount = (amount || 0) * rate;
+
     let locale = 'en-IN';
     if (currency === 'USD') locale = 'en-US';
     else if (currency === 'EUR') locale = 'de-DE';
@@ -232,8 +299,8 @@ export const useSettingsStore = create((set, get) => ({
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
+      maximumFractionDigits: currency === 'INR' ? 0 : 2,
+    }).format(convertedAmount);
   }
 }));
 

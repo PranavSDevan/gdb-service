@@ -201,20 +201,6 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AccountException("Account not found with number: " + accountNumber,
                         AccountConstants.ACCOUNT_NOT_FOUND));
 
-        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
-        if (context != null && context.getRole() != null) {
-            String role = context.getRole().toUpperCase().trim();
-            if (role.startsWith("ROLE_")) {
-                role = role.substring(5);
-            }
-            if ("TELLER".equals(role)) {
-                String tellerName = userClient.getUsername(context.getLoginId());
-                if (tellerName == null || !account.getName().equalsIgnoreCase(tellerName)) {
-                    throw new AccountException("Access Denied: Tellers can only view their own accounts.", "ACCESS_DENIED");
-                }
-            }
-        }
-
         return AccountMapper.toResponse(account);
     }
 
@@ -222,24 +208,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public List<AccountResponse> getAllAccounts(String type, String privilege, Boolean isActive) {
-        com.gdb.account.security.UserContext context = com.gdb.account.security.UserContextHolder.getContext();
         List<Account> accounts = accountRepository.findAll(type, privilege, isActive);
-        if (context != null && context.getRole() != null) {
-            String role = context.getRole().toUpperCase().trim();
-            if (role.startsWith("ROLE_")) {
-                role = role.substring(5);
-            }
-            if ("TELLER".equals(role)) {
-                String tellerName = userClient.getUsername(context.getLoginId());
-                if (tellerName != null) {
-                    accounts = accounts.stream()
-                            .filter(a -> a.getName() != null && a.getName().equalsIgnoreCase(tellerName))
-                            .toList();
-                } else {
-                    accounts = List.of();
-                }
-            }
-        }
         return AccountMapper.toResponseList(accounts);
     }
 

@@ -63,8 +63,8 @@ public class AccountRepositoryImpl implements AccountRepository {
                 .addValue("accountNumber", account.getAccountNumber())
                 .addValue("dob", account.getSavingsDetails().getDateOfBirth())
                 .addValue("gender", account.getSavingsDetails().getGender())
-                .addValue("phoneNo", account.getSavingsDetails().getPhoneNo())
-                .addValue("aadharNumber", account.getSavingsDetails().getAadharNumber());
+                .addValue("phoneNo", com.gdb.account.util.CryptoUtil.encrypt(account.getSavingsDetails().getPhoneNo()))
+                .addValue("aadharNumber", com.gdb.account.util.CryptoUtil.encrypt(account.getSavingsDetails().getAadharNumber()));
 
         jdbcTemplate.update(sql, params);
     }
@@ -107,8 +107,8 @@ public class AccountRepositoryImpl implements AccountRepository {
             account.setSavingsDetails(Account.SavingsDetails.builder()
                     .dateOfBirth(rs.getString("date_of_birth"))
                     .gender(rs.getString("gender"))
-                    .phoneNo(rs.getString("phone_no"))
-                    .aadharNumber(rs.getString("aadhar_number"))
+                    .phoneNo(com.gdb.account.util.CryptoUtil.decrypt(rs.getString("phone_no")))
+                    .aadharNumber(com.gdb.account.util.CryptoUtil.decrypt(rs.getString("aadhar_number")))
                     .build());
         });
     }

@@ -6,6 +6,8 @@ import com.gdb.bankstatements.dto.StatementDto;
 import com.gdb.bankstatements.repository.StatementRepository;
 import com.gdb.bankstatements.repository.StatementTransactionRepository;
 import com.gdb.bankstatements.service.StatementService;
+import com.gdb.bankstatements.security.UserContext;
+import com.gdb.bankstatements.security.UserContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +54,8 @@ public class StatementServiceImpl implements StatementService {
             HttpServletRequest currentRequest = attributes.getRequest();
             authHeader = currentRequest.getHeader("Authorization");
         }
+
+        checkTellerAccess(request.getAccountId(), authHeader);
 
         // 1. Sync latest transactions from transactions-service to local database
         syncTransactions(request.getAccountId(), authHeader);
@@ -149,8 +153,6 @@ public class StatementServiceImpl implements StatementService {
         Statement statement = statementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Statement not found"));
         
-        StatementDto responseDto = convertToDto(statement);
-
         // Populate details for this statement by re-calculating from the database
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         String authHeader = null;
@@ -158,6 +160,10 @@ public class StatementServiceImpl implements StatementService {
             HttpServletRequest currentRequest = attributes.getRequest();
             authHeader = currentRequest.getHeader("Authorization");
         }
+
+        checkTellerAccess(statement.getAccountId(), authHeader);
+
+        StatementDto responseDto = convertToDto(statement);
 
         BigDecimal currentBalance = getAccountBalance(statement.getAccountId(), authHeader);
         List<StatementTransaction> allTxs = statementTransactionRepository.findByAccountIdOrderByTransactionDateDesc(statement.getAccountId());
@@ -232,6 +238,8 @@ public class StatementServiceImpl implements StatementService {
             HttpServletRequest currentRequest = attributes.getRequest();
             authHeader = currentRequest.getHeader("Authorization");
         }
+
+        checkTellerAccess(statement.getAccountId(), authHeader);
 
         BigDecimal currentBalance = getAccountBalance(statement.getAccountId(), authHeader);
         List<StatementTransaction> allTxs = statementTransactionRepository.findByAccountIdOrderByTransactionDateDesc(statement.getAccountId());
@@ -360,6 +368,41 @@ public class StatementServiceImpl implements StatementService {
             log.warn("Failed to fetch balance from account-service for account {}: {}", accountId, e.getMessage());
         }
         return new BigDecimal("50000.00"); // fallback
+    }
+
+    private void checkTellerAccess(String accountId, String authHeader) {
+        UserContext context = UserContextHolder.getContext();
+        if (context != null && "TELLER".equalsIgnoreCase(context.getRole())) {
+            try {
+                String url = accountsServiceUrl + "/api/v1/accounts";
+                HttpHeaders headers = new HttpHeaders();
+                if (authHeader != null) {
+                    headers.set("Authorization", authHeader);
+                }
+                HttpEntity<Void> entity = new HttpEntity<>(headers);
+                ResponseEntity<List> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, List.class);
+                List<Map<String, Object>> accounts = responseEntity.getBody();
+                boolean ownAccount = false;
+                if (accounts != null) {
+                    for (Map<String, Object> account : accounts) {
+                        Object accNumObj = account.get("account_number") != null ? account.get("account_number") : account.get("accountNumber");
+                        String accNum = String.valueOf(accNumObj);
+                        if (accNum.equals(accountId)) {
+                            ownAccount = true;
+                            break;
+                        }
+                    }
+                }
+                if (!ownAccount) {
+                    throw new RuntimeException("ACCESS_DENIED");
+                }
+            } catch (Exception e) {
+                if (e.getMessage() != null && e.getMessage().contains("ACCESS_DENIED")) {
+                    throw e;
+                }
+                throw new RuntimeException("ACCESS_DENIED", e);
+            }
+        }
     }
 
     private LocalDate parseDate(String dateStr) {

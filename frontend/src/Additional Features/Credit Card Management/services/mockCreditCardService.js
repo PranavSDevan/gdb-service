@@ -256,5 +256,58 @@ export const creditCardService = {
     });
 
     return { success: true, transactionId: `PAY${Math.floor(Math.random() * 100000)}` };
+  },
+
+  makePurchase: async (purchaseData, cardId = null) => {
+    if (USE_REAL_API) {
+      try {
+        if (!cardId) {
+          const userId = useAuthStore.getState().user?.id || 'admin';
+          const response = await creditCardsApi.get(`/api/v1/credit-cards/user/${userId}`);
+          const cards = response.data;
+          if (cards.length === 0) throw new Error("No active card found");
+          cardId = cards[0].id;
+        }
+        const response = await creditCardsApi.post(`/api/v1/credit-cards/${cardId}/purchase`, {
+          merchant: purchaseData.merchant,
+          amount: purchaseData.amount
+        });
+        return { success: true, transactionId: response.data.id || `TXN${Math.floor(Math.random() * 100000)}` };
+      } catch (error) {
+        console.error("Failed making credit card purchase:", error);
+        throw new Error(error.response?.data?.message || "Failed to make purchase");
+      }
+    }
+
+    await delay(1200);
+    
+    const targetCardId = cardId || mockCards[0]?.id;
+    const cardIndex = mockCards.findIndex(c => c.id === targetCardId);
+    
+    if (cardIndex === -1) throw new Error("Card not found");
+    const card = mockCards[cardIndex];
+
+    if (!purchaseData.amount || purchaseData.amount <= 0) {
+      throw new Error("Invalid purchase amount");
+    }
+    if (purchaseData.amount > card.availableCredit) {
+      throw new Error("Insufficient credit limit");
+    }
+
+    card.availableCredit -= purchaseData.amount;
+    card.outstandingAmount += purchaseData.amount;
+    card.minimumDue = card.outstandingAmount * 0.05;
+    
+    mockTransactions.unshift({
+      id: `TXN${Math.floor(Math.random() * 100000)}`,
+      cardId: targetCardId,
+      date: new Date().toISOString(),
+      merchant: purchaseData.merchant || 'Mock Merchant',
+      amount: purchaseData.amount,
+      type: 'Purchase',
+      status: 'Completed'
+    });
+
+    return { success: true, transactionId: `TXN${Math.floor(Math.random() * 100000)}` };
   }
 };

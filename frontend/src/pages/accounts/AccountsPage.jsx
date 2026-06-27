@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccountStore } from '../../store/accountStore';
 import { useAuthStore } from '../../store/authStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   Search,
   Filter,
@@ -47,13 +48,7 @@ const AccountsPage = () => {
     fetchAccounts();
   }, []);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   const getPrivilegeBadge = (privilege) => {
     switch (privilege) {

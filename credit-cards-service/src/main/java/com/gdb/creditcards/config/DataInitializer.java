@@ -22,35 +22,45 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        long cardCount = creditCardRepository.count();
-        log.info("Current credit card count in DB: {}", cardCount);
+        log.info("Clearing existing credit card database records for clean seeding...");
+        creditCardTransactionRepository.deleteAll();
+        creditCardRepository.deleteAll();
 
-        // 1. Ensure user "1" (System Admin) has a card and transactions
-        CreditCard adminCard = getOrCreateCard("1", "PLATINUM", "4111222233334444", 500000.0, 125000.0, 375000.0, 18750.0, LocalDate.now().plusDays(5));
+        // 1. System Admin (Priya Sharma) - User 1
+        CreditCard adminCard = getOrCreateCard("1", "PLATINUM", "4111222233334444", 500000.0, 125000.0, 375000.0, 18750.0, LocalDate.now().plusDays(5), "Priya Sharma");
         seedTransactionsIfEmpty(adminCard.getId(), true);
 
-        // 2. Ensure user "2" (John Doe) has a card and transactions
-        CreditCard johnCard = getOrCreateCard("2", "GOLD", "4111555566667777", 250000.0, 200000.0, 50000.0, 2500.0, LocalDate.now().plusDays(10));
+        // 2. John Doe - User 7
+        CreditCard johnCard = getOrCreateCard("7", "GOLD", "4111555566667777", 250000.0, 200000.0, 50000.0, 2500.0, LocalDate.now().plusDays(10), "John Doe");
         seedTransactionsIfEmpty(johnCard.getId(), false);
 
-        // 3. Ensure user "3" (Teller User) has a card and transactions
-        CreditCard tellerCard = getOrCreateCard("3", "SILVER", "4111888899990000", 100000.0, 85000.0, 15000.0, 750.0, LocalDate.now().plusDays(12));
+        // 3. Teller User - User 8
+        CreditCard tellerCard = getOrCreateCard("8", "SILVER", "4111888899990000", 100000.0, 85000.0, 15000.0, 750.0, LocalDate.now().plusDays(12), "Teller User");
         seedTransactionsIfEmpty(tellerCard.getId(), false);
 
-        // 4. Ensure user "4" (Manager User) has a card and transactions
-        CreditCard managerCard = getOrCreateCard("4", "PREMIUM", "4111111122223333", 300000.0, 260000.0, 40000.0, 2000.0, LocalDate.now().plusDays(15));
+        // 4. Manager User - User 9
+        CreditCard managerCard = getOrCreateCard("9", "PLATINUM", "4111111122223333", 300000.0, 260000.0, 40000.0, 2000.0, LocalDate.now().plusDays(15), "Manager User");
         seedTransactionsIfEmpty(managerCard.getId(), false);
+
+        // 5. Manager Rajesh Kumar - User 2
+        CreditCard rajeshCard = getOrCreateCard("2", "GOLD", "4111222244448888", 250000.0, 250000.0, 0.0, 0.0, LocalDate.now().plusDays(20), "Rajesh Kumar");
+        seedTransactionsIfEmpty(rajeshCard.getId(), false);
+
+        // 6. Manager Sunita Agarwal - User 3
+        CreditCard sunitaCard = getOrCreateCard("3", "GOLD", "4111333366669999", 250000.0, 250000.0, 0.0, 0.0, LocalDate.now().plusDays(20), "Sunita Agarwal");
+        seedTransactionsIfEmpty(sunitaCard.getId(), false);
+
+        // 7. Teller Amit Verma - User 4
+        CreditCard amitCard = getOrCreateCard("4", "SILVER", "4111444488881111", 100000.0, 100000.0, 0.0, 0.0, LocalDate.now().plusDays(20), "Amit Verma");
+        seedTransactionsIfEmpty(amitCard.getId(), false);
+
+        // 8. Teller Neha Singh - User 5
+        CreditCard nehaCard = getOrCreateCard("5", "SILVER", "4111555599992222", 100000.0, 100000.0, 0.0, 0.0, LocalDate.now().plusDays(20), "Neha Singh");
+        seedTransactionsIfEmpty(nehaCard.getId(), false);
     }
 
-    private CreditCard getOrCreateCard(String userId, String cardType, String defaultCardNumber, Double limit, Double available, Double outstanding, Double minDue, LocalDate nextDue) {
-        java.util.List<CreditCard> cards = creditCardRepository.findByUserId(userId);
-        if (!cards.isEmpty()) {
-            CreditCard card = cards.get(0);
-            log.info("User {} already has card in DB: ID={}, CardNumber={}", userId, card.getId(), card.getCardNumber());
-            return card;
-        }
-
-        log.info("User {} has no card. Seeding one...", userId);
+    private CreditCard getOrCreateCard(String userId, String cardType, String defaultCardNumber, Double limit, Double available, Double outstanding, Double minDue, LocalDate nextDue, String cardHolderName) {
+        log.info("Seeding card for user {} ({})", userId, cardHolderName);
         CreditCard card = new CreditCard();
         card.setUserId(userId);
         card.setCardNumber(defaultCardNumber);
@@ -60,6 +70,7 @@ public class DataInitializer implements CommandLineRunner {
         card.setOutstandingAmount(outstanding);
         card.setMinimumDue(minDue);
         card.setNextDueDate(nextDue);
+        card.setCardHolderName(cardHolderName);
         card.setStatus("ACTIVE");
         return creditCardRepository.save(card);
     }

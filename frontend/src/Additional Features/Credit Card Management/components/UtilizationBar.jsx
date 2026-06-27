@@ -1,6 +1,8 @@
 import React from 'react';
+import useSettingsStore from '../../../store/settingsStore';
 
 const UtilizationBar = ({ available, limit }) => {
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
   const utilizationPercentage = ((limit - available) / limit) * 100;
   const availablePercentage = (available / limit) * 100;
 
@@ -25,8 +27,8 @@ const UtilizationBar = ({ available, limit }) => {
         ></div>
       </div>
       <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-        <span>₹0</span>
-        <span>Limit: ₹{limit.toLocaleString('en-IN')}</span>
+        <span>{formatCurrency(0)}</span>
+        <span>Limit: {formatCurrency(limit)}</span>
       </div>
     </div>
   );

@@ -3,6 +3,9 @@ package com.gdb.transactions.controller;
 import com.gdb.transactions.domain.enums.TransactionType;
 import com.gdb.transactions.dto.response.TransactionLogResponse;
 import com.gdb.transactions.service.TransactionLogService;
+import com.gdb.transactions.client.UserClient;
+import com.gdb.transactions.client.AccountServiceClient;
+import com.gdb.transactions.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import com.gdb.transactions.security.SecurityUtils;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for transaction log operations.
@@ -31,6 +34,8 @@ import com.gdb.transactions.security.SecurityUtils;
 public class TransactionLogController {
 
         private final TransactionLogService transactionLogService;
+        private final UserClient userClient;
+        private final AccountServiceClient accountServiceClient;
 
         @GetMapping("/transaction-logs")
         @Operation(summary = "Get all transactions", description = "Retrieve all transactions across all accounts")
@@ -47,6 +52,18 @@ public class TransactionLogController {
 
                 List<TransactionLogResponse> transactions = transactionLogService.getAllTransactionLogs(limit, offset);
                 Long total = transactionLogService.getTotalCount();
+
+                // Teller restriction: filter logs to only those belonging to teller's own accounts
+                if (SecurityUtils.isTeller()) {
+                        String tellerName = userClient.getUsername(SecurityUtils.getCurrentLoginId());
+                        transactions = transactions.stream()
+                                .filter(t -> {
+                                        // Resolve account owner name via AccountServiceClient
+                                        var acc = accountServiceClient.validateAccount(t.getAccountNumber());
+                                        return acc != null && tellerName != null && tellerName.equalsIgnoreCase(acc.getName());
+                                })
+                                .collect(Collectors.toList());
+                }
 
                 Map<String, Object> response = Map.of(
                         "logs", transactions,
@@ -74,6 +91,15 @@ public class TransactionLogController {
                 // Enterprise Fix: Standardized to case-insensitive cross-staff roles check
                 SecurityUtils.checkAnyStaffRole();
                 log.info("Received request to get transaction logs for account: {}", accountNumber);
+
+                // Teller restriction: ensure the account belongs to the teller
+                if (SecurityUtils.isTeller()) {
+                        var acc = accountServiceClient.validateAccount(accountNumber);
+                        String tellerName = userClient.getUsername(SecurityUtils.getCurrentLoginId());
+                        if (acc == null || tellerName == null || !tellerName.equalsIgnoreCase(acc.getName())) {
+                                throw new RuntimeException("ACCESS_DENIED");
+                        }
+                }
 
                 List<TransactionLogResponse> transactions;
 
@@ -111,6 +137,15 @@ public class TransactionLogController {
                 // Enterprise Fix: Standardized to case-insensitive cross-staff roles check
                 SecurityUtils.checkAnyStaffRole();
                 log.info("Received request to get transaction summary for account: {}", accountNumber);
+
+                // Teller restriction: verify ownership
+                if (SecurityUtils.isTeller()) {
+                        var acc = accountServiceClient.validateAccount(accountNumber);
+                        String tellerName = userClient.getUsername(SecurityUtils.getCurrentLoginId());
+                        if (acc == null || tellerName == null || !tellerName.equalsIgnoreCase(acc.getName())) {
+                                throw new RuntimeException("ACCESS_DENIED");
+                        }
+                }
 
                 Map<String, Object> period = Map.of(
                         "startDate", startDate != null ? startDate : LocalDate.now().minusMonths(1),

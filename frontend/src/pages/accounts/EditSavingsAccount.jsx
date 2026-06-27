@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccountStore } from '../../store/accountStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   ArrowLeft,
   PiggyBank,
@@ -23,6 +24,7 @@ import toast from 'react-hot-toast';
 const EditSavingsAccount = () => {
   const { accountNumber } = useParams();
   const navigate = useNavigate();
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
   const { getAccountByNumber, updateAccount, isLoading } = useAccountStore();
   const { addNotification } = useNotificationStore();
 
@@ -193,7 +195,7 @@ const EditSavingsAccount = () => {
           <div className="text-right">
             <p className="text-blue-100 text-sm">Current Balance</p>
             <p className="text-2xl font-bold">
-              ₹{account.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              {formatCurrency(account.balance)}
             </p>
           </div>
         </div>

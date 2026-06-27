@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import toast from 'react-hot-toast';
+import useSettingsStore from '../../../store/settingsStore';
 
 const COLORS = ['#22c55e', '#ef4444'];
 
@@ -14,6 +15,7 @@ const formatMoney = (amount) => {
 };
 
 const StatementPreview = () => {
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
   // Filter States
   const [accounts, setAccounts] = useState([]);
   const [filters, setFilters] = useState({
@@ -69,15 +71,25 @@ const StatementPreview = () => {
 
     if (!filters.accountId) errors.accountId = 'Required';
     
-    if (!filters.fromDate) errors.fromDate = 'Required';
-    else if (new Date(filters.fromDate) > today) errors.fromDate = 'No future dates';
+    let fromD = null;
+    if (filters.fromDate) {
+      const parts = filters.fromDate.split('-');
+      fromD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      if (fromD > today) errors.fromDate = 'No future dates';
+    } else {
+      errors.fromDate = 'Required';
+    }
 
-    if (!filters.toDate) errors.toDate = 'Required';
-    else if (new Date(filters.toDate) > today) errors.toDate = 'No future dates';
+    let toD = null;
+    if (filters.toDate) {
+      const parts = filters.toDate.split('-');
+      toD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      if (toD > today) errors.toDate = 'No future dates';
+    } else {
+      errors.toDate = 'Required';
+    }
 
-    if (filters.fromDate && filters.toDate) {
-      const fromD = new Date(filters.fromDate);
-      const toD = new Date(filters.toDate);
+    if (fromD && toD) {
       if (fromD > toD) errors.fromDate = 'From > To';
       else if ((toD - fromD) / (1000 * 60 * 60 * 24) > 365) errors.toDate = 'Max 1 year';
     }
@@ -322,19 +334,19 @@ const StatementPreview = () => {
                 <h3 className="font-semibold text-gray-900 border-b border-gray-100 pb-2">Summary</h3>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Opening Balance</span>
-                  <span className="font-semibold text-gray-900">₹{formatMoney(data.summary.openingBalance)}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(data.summary.openingBalance)}</span>
                 </div>
                 <div className="flex justify-between items-center text-green-600">
                   <div className="flex items-center gap-1 text-sm"><ArrowDownRight className="w-4 h-4"/> Total Credits</div>
-                  <span className="font-semibold">+ ₹{formatMoney(data.summary.totalCredits)}</span>
+                  <span className="font-semibold">+ {formatCurrency(data.summary.totalCredits)}</span>
                 </div>
                 <div className="flex justify-between items-center text-red-500">
                   <div className="flex items-center gap-1 text-sm"><ArrowUpRight className="w-4 h-4"/> Total Debits</div>
-                  <span className="font-semibold">- ₹{formatMoney(data.summary.totalDebits)}</span>
+                  <span className="font-semibold">- {formatCurrency(data.summary.totalDebits)}</span>
                 </div>
                 <div className="flex justify-between items-center border-t border-gray-100 pt-3">
                   <span className="text-sm font-semibold text-gray-900">Closing Balance</span>
-                  <span className="font-bold text-lg text-primary-600">₹{formatMoney(data.summary.closingBalance)}</span>
+                  <span className="font-bold text-lg text-primary-600">{formatCurrency(data.summary.closingBalance)}</span>
                 </div>
               </div>
 
@@ -347,7 +359,7 @@ const StatementPreview = () => {
                       <Pie data={pieData} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
                         {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                       </Pie>
-                      <RechartsTooltip formatter={(value) => `₹${formatMoney(value)}`} />
+                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -369,8 +381,8 @@ const StatementPreview = () => {
                     <BarChart data={trendData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="date" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                      <YAxis tick={{fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
-                      <RechartsTooltip formatter={(value) => `₹${formatMoney(value)}`} />
+                      <YAxis tick={{fontSize: 12}} axisLine={false} tickLine={false} tickFormatter={(val) => formatCurrency(val)} />
+                      <RechartsTooltip formatter={(value) => formatCurrency(value)} />
                       <Bar dataKey="credit" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={40} />
                       <Bar dataKey="debit" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
@@ -430,13 +442,13 @@ const StatementPreview = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(tx.date).toLocaleDateString('en-GB')}</td>
                             <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">{tx.description}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 font-medium">
-                              {tx.debit ? `₹${formatMoney(tx.debit)}` : '-'}
+                              {tx.debit ? formatCurrency(tx.debit) : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 font-medium">
-                              {tx.credit ? `₹${formatMoney(tx.credit)}` : '-'}
+                              {tx.credit ? formatCurrency(tx.credit) : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-bold">
-                              ₹{formatMoney(tx.balance)}
+                              {formatCurrency(tx.balance)}
                             </td>
                           </tr>
                         ))

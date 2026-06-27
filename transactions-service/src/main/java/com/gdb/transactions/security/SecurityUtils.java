@@ -56,4 +56,14 @@ public class SecurityUtils {
             throw new RuntimeException("ACCESS_DENIED");
         }
     }
+
+    public static boolean isTeller() {
+        UserContext context = UserContextHolder.getContext();
+        return context != null && ROLE_TELLER.equals(cleanRole(context.getRole()));
+    }
+
+    public static String getCurrentLoginId() {
+        UserContext context = UserContextHolder.getContext();
+        return context != null ? context.getLoginId() : null;
+    }
 }

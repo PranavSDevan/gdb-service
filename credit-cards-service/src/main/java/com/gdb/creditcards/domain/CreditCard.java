@@ -17,6 +17,7 @@ public class CreditCard {
     private String userId;
     
     @Column(name = "card_number")
+    @Convert(converter = CryptoConverter.class)
     private String cardNumber;
     
     @Column(name = "card_type")
@@ -38,6 +39,7 @@ public class CreditCard {
     private LocalDate nextDueDate;
     
     @Column(name = "card_holder_name")
+    @Convert(converter = CryptoConverter.class)
     private String cardHolderName;
 
     private String status = "ACTIVE"; // ACTIVE, INACTIVE, BLOCKED

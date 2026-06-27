@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTransactionStore } from '../../store/transactionStore';
 import { useAccountStore } from '../../store/accountStore';
+import useSettingsStore from '../../store/settingsStore';
 import {
   BarChart3,
   Download,
@@ -167,13 +168,7 @@ const ReportsPage = () => {
     { name: 'Premium', value: accountList.filter(a => a && a.privilege === 'PREMIUM').length, color: '#8B5CF6' },
   ];
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
+  const formatCurrency = useSettingsStore((state) => state.formatCurrencyAmount);
 
   const handleExportReport = () => {
     const reportData = {
