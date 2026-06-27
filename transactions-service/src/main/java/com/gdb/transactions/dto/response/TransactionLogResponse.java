@@ -34,8 +34,5 @@ public class TransactionLogResponse {
     @JsonProperty("to_account")
     private Long toAccount;
     @JsonProperty("created_at")
-    private LocalDateTime createdAt;
-    private String description;
-    private String mode;
-    private String status;
+    private LocalDateTime createdAt;    
 }
