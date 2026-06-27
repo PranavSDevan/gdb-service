@@ -1,0 +1,82 @@
+﻿name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release (Java 17 / Maven)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build Release JARs (skip tests)
+        run: mvn package -DskipTests --batch-mode --no-transfer-progress
+
+      - name: Collect all service JARs
+        run: |
+          mkdir -p release-artifacts
+          find . -path "*/target/*.jar" ! -name "*original*" -exec cp {} release-artifacts/ \;
+          ls -la release-artifacts/
+
+      - name: Package JARs into tar.gz archive
+        run: |
+          tar -czf gdb-service-${{ github.ref_name }}.tar.gz -C release-artifacts .
+          echo "Created archive: gdb-service-${{ github.ref_name }}.tar.gz"
+          ls -lh gdb-service-*.tar.gz
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          name: GDB Service ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## GDB Banking Microservices - Release ${{ github.ref_name }}
+
+            ### What's Included
+            This release contains compiled JAR files for all GDB microservices:
+            - aadhar-service
+            - account-service
+            - ai-service
+            - auth-service
+            - bank-statements-service
+            - company-service
+            - credit-cards-service
+            - eureka-server
+            - gateway-service
+            - payment-gateway-service
+            - settings-service
+            - transactions-service
+            - users-service
+
+            ### Deployment
+            Use docker-compose up --build -d to deploy all services via Docker.
+
+            ### Requirements
+            - Java 17+
+            - PostgreSQL 15+
+            - Docker Desktop (for containerized deployment)
+          files: gdb-service-${{ github.ref_name }}.tar.gz
+          generate_release_notes: true
